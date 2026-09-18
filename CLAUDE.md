@@ -49,9 +49,9 @@ Cloudflare Workers (static assets) is the intended deploy target; not yet wired 
 Scoped as one MVP effort, in this order. Nothing below is started except where marked.
 
 1. **Setup** — Vite + TS + R3F installed, react/react-dom pinned (see above). ✅ done.
-2. **3D scene fundamentals** — Scene/Camera/Renderer, room geometry, lighting, fixed first-person camera in front of the cabinet. 🔶 in progress (only a placeholder box in `App.tsx` so far — this is the current/next work).
-3. **Cabinet + grid** — cabinet geometry, the 15-cell (5×3) plane grid, texture-mapping the (still undecided) icon set onto it.
-4. **Spin logic** (`src/game/`) — weighted RNG over 15 symbols, win-line detection, payout table. Pure TS, no React/three — should be straightforward to unit test once a test runner exists.
+2. **3D scene fundamentals** — `src/scene/Room.tsx` (inside-out box, BackSide), `src/scene/Lighting.tsx` (dim ambient + one spotlight), `src/scene/FixedCamera.tsx` (fixed first-person, no controls). ✅ done.
+3. **Cabinet + grid** — `src/scene/Cabinet.tsx` + `src/scene/ReelGrid.tsx`: cabinet box and the 15-cell (5×3) plane grid, each cell showing a placeholder numbered swatch texture (`src/scene/icons.ts`). ✅ structurally done — the swatches are throwaway; real icon art swaps in once the icon theme is decided (still undecided, see `docs/NOTES.md`). Grid uses unlit `meshBasicMaterial` so it reads clearly regardless of room lighting, like a backlit real cabinet display.
+4. **Spin logic** (`src/game/`) — weighted RNG over 15 symbols, win-line detection, payout table. Pure TS, no React/three — should be straightforward to unit test once a test runner exists. 🔶 next.
 5. **Reel animation** — spin-then-stop easing, win highlight effects.
 6. **Audio** — BGM (loop + mute toggle) and SE (spin/stop/win/warning) via the Web Audio API.
 7. **Game loop** (`src/store/`) — money/quota/turn state, stage advance, game-over/clear transitions.
