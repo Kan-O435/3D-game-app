@@ -27,13 +27,11 @@ Vite + TypeScript + React + React Three Fiber (`@react-three/fiber`, `@react-thr
 ### react/react-dom are pinned to exact `19.2.8`
 Not `^19.2.8`. `@react-three/fiber`'s peer range is `react@">=19 <19.3"` (true even on its 10.x canary builds as of this writing); a caret range resolves to 19.3.0 and `npm install` fails with ERESOLVE. Keep the exact pin — or re-check `@react-three/fiber`'s current peerDependencies — before bumping React.
 
-### Intended module boundaries
-The codebase is still just the Vite template + a placeholder `<Canvas>` box in `App.tsx`. The planned split, going forward:
-
-- `src/game/` — framework-agnostic TS: weighted symbol RNG, win-line detection, payout table. No React or three.js imports; keep it unit-testable in isolation from rendering.
-- `src/scene/` — R3F components (cabinet, reels, lighting). Reads game state and renders it; does not own game logic.
-- `src/ui/` — DOM-rendered React HUD (money, quota, turn counter, PUSH button, game-over/clear screens), overlaid on the `<Canvas>`, not inside it.
-- `src/store/` — zustand store(s) that both `scene` and `ui` read/write; the only place game state lives outside `src/game/`'s pure functions.
+### Module boundaries
+- `src/game/` — framework-agnostic TS: weighted symbol RNG (`rng.ts`), grid fill (`spin.ts`), win-line detection + payout (`paylines.ts`), the symbol/layout tables (`symbols.ts`, `layout.ts`). No React or three.js imports; kept unit-testable in isolation from rendering (verified manually so far — no test runner wired up yet).
+- `src/scene/` — R3F components (`Room`, `Lighting`, `FixedCamera`, `Cabinet`, `ReelGrid`). Reads `src/store` state and renders/animates it; does not decide game outcomes itself — `ReelGrid`'s roll animation just delays *revealing* the grid the store already computed.
+- `src/ui/` — DOM-rendered React HUD, overlaid on the `<Canvas>` (a sibling `<div>`, not inside the Canvas tree). Only `SpinButton.tsx` exists so far, pulled forward from its Phase 8 slot because Phase 5's reel animation needed something to trigger it; Phase 8 extends this into the full HUD (money/quota/turns, game-over/clear screens).
+- `src/store/` — zustand (`gameStore.ts`). Currently holds `grid`/`isSpinning`/`lastWins`/`lastPayout` and the `spin()`/`finishSpin()` actions; `spin()` computes the full result immediately, `finishSpin()` is called by `ReelGrid` once the reel animation visually catches up. Phase 7 extends this store with money/quota/turn state.
 
 ### Game design constants
 - Slot grid is 5 reels × 3 rows = 15 visible cells, matching the reference game.
@@ -52,9 +50,9 @@ Scoped as one MVP effort, in this order. Nothing below is started except where m
 2. **3D scene fundamentals** — `src/scene/Room.tsx` (inside-out box, BackSide), `src/scene/Lighting.tsx` (dim ambient + one spotlight), `src/scene/FixedCamera.tsx` (fixed first-person, no controls). ✅ done.
 3. **Cabinet + grid** — `src/scene/Cabinet.tsx` + `src/scene/ReelGrid.tsx`: cabinet box and the 15-cell (5×3) plane grid, each cell showing a placeholder numbered swatch texture (`src/scene/icons.ts`). ✅ structurally done — the swatches are throwaway; real icon art swaps in once the icon theme is decided (still undecided, see `docs/NOTES.md`). Grid uses unlit `meshBasicMaterial` so it reads clearly regardless of room lighting, like a backlit real cabinet display.
 4. **Spin logic** (`src/game/`) — `layout.ts` (grid shape), `symbols.ts` (weighted symbol table), `rng.ts` (weighted draw), `spin.ts` (fills the grid), `paylines.ts` (row-based win detection + payout). Pure TS, no React/three, no test runner wired up yet but verified manually to draw symbols in the correct weighted proportions and detect wins correctly. ✅ done — weights/payouts/multipliers are placeholders, tracked in `docs/NOTES.md`.
-5. **Reel animation** — spin-then-stop easing, win highlight effects. 🔶 next — this is also where `src/game/spin.ts`'s output first needs to reach `src/scene/ReelGrid.tsx` (currently the grid only shows static placeholder textures, not real spin results).
-6. **Audio** — BGM (loop + mute toggle) and SE (spin/stop/win/warning) via the Web Audio API.
-7. **Game loop** (`src/store/`) — money/quota/turn state, stage advance, game-over/clear transitions.
+5. **Reel animation** — `src/store/gameStore.ts` + `src/scene/ReelGrid.tsx`: columns roll (cycling textures) and stop left-to-right with a stagger, then reveal the store's already-computed grid; winning cells (from `lastWins`) pulse once stopped. A minimal `src/ui/SpinButton.tsx` triggers it. ✅ done — durations/stagger/pulse are feel, not tuned.
+6. **Audio** — BGM (loop + mute toggle) and SE (spin/stop/win/warning) via the Web Audio API. 🔶 next.
+7. **Game loop** — extend `src/store/gameStore.ts` with money/quota/turn state, stage advance, game-over/clear transitions.
 8. **HUD** (`src/ui/`) — money/quota/turns display, PUSH button, game-over/clear screens.
 9. **Deploy** — wire up Cloudflare Workers static-asset deploy.
 
