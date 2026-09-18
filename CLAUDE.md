@@ -1,0 +1,69 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project
+
+A browser-playable homage to *CloverPit* (Steam, Unity, Panik Arcade) — a first-person slot-machine horror roguelite: spin a slot machine, meet a payout quota within a turn limit or lose. This reimplements the game-loop concept in the browser via three.js/React Three Fiber; no assets or code are ported from the original.
+
+Client-side only, intentionally — no backend/DB.
+
+## Commands
+
+```bash
+npm run dev       # start Vite dev server
+npm run build     # tsc -b && vite build (type-checks, then builds)
+npm run lint      # oxlint (see .oxlintrc.json — react/typescript/oxc plugins)
+npm run preview   # preview the production build locally
+```
+
+No test suite is set up yet.
+
+## Architecture
+
+### Stack, and why
+Vite + TypeScript + React + React Three Fiber (`@react-three/fiber`, `@react-three/drei`, `three`). R3F was chosen over vanilla three.js specifically so the HUD (money / quota / turns) can share React state with the 3D scene instead of manually syncing a DOM overlay against a separate render loop. `zustand` holds that shared game state (plain React Context was ruled out — too many re-renders for per-frame-ish updates). `@react-three/postprocessing` + `postprocessing` are in for visual effects (win highlights, horror atmosphere lighting).
+
+### react/react-dom are pinned to exact `19.2.8`
+Not `^19.2.8`. `@react-three/fiber`'s peer range is `react@">=19 <19.3"` (true even on its 10.x canary builds as of this writing); a caret range resolves to 19.3.0 and `npm install` fails with ERESOLVE. Keep the exact pin — or re-check `@react-three/fiber`'s current peerDependencies — before bumping React.
+
+### Intended module boundaries
+The codebase is still just the Vite template + a placeholder `<Canvas>` box in `App.tsx`. The planned split, going forward:
+
+- `src/game/` — framework-agnostic TS: weighted symbol RNG, win-line detection, payout table. No React or three.js imports; keep it unit-testable in isolation from rendering.
+- `src/scene/` — R3F components (cabinet, reels, lighting). Reads game state and renders it; does not own game logic.
+- `src/ui/` — DOM-rendered React HUD (money, quota, turn counter, PUSH button, game-over/clear screens), overlaid on the `<Canvas>`, not inside it.
+- `src/store/` — zustand store(s) that both `scene` and `ui` read/write; the only place game state lives outside `src/game/`'s pure functions.
+
+### Game design constants
+- Slot grid is 5 reels × 3 rows = 15 visible cells, matching the reference game.
+- 15 total icon symbols, weighted by rarity rather than uniform probability — also matching the reference game's design, not an arbitrary choice.
+- For calibration only (not to be copied 1:1 — this project has 15 symbols, the reference has 7): CloverPit's own slot uses a tiered payout, roughly lemon/cherry = 2 coins, clover/bell = 3, treasure/diamond = 5, lucky seven = 7. Use this as a shape for "common symbols pay little, rare symbols pay a lot," not as literal values.
+- Core loop, precisely: spin → payout added to money → if money ≥ quota before turns run out, advance to the next stage (quota/difficulty increases) → if turns run out first, game over. Turns and quota values are still undecided (see Open decisions).
+
+### Deploy target
+Cloudflare Workers (static assets) is the intended deploy target; not yet wired up.
+
+## Roadmap
+
+Scoped as one MVP effort, in this order. Nothing below is started except where marked.
+
+1. **Setup** — Vite + TS + R3F installed, react/react-dom pinned (see above). ✅ done.
+2. **3D scene fundamentals** — Scene/Camera/Renderer, room geometry, lighting, fixed first-person camera in front of the cabinet. 🔶 in progress (only a placeholder box in `App.tsx` so far — this is the current/next work).
+3. **Cabinet + grid** — cabinet geometry, the 15-cell (5×3) plane grid, texture-mapping the (still undecided) icon set onto it.
+4. **Spin logic** (`src/game/`) — weighted RNG over 15 symbols, win-line detection, payout table. Pure TS, no React/three — should be straightforward to unit test once a test runner exists.
+5. **Reel animation** — spin-then-stop easing, win highlight effects.
+6. **Audio** — BGM (loop + mute toggle) and SE (spin/stop/win/warning) via the Web Audio API.
+7. **Game loop** (`src/store/`) — money/quota/turn state, stage advance, game-over/clear transitions.
+8. **HUD** (`src/ui/`) — money/quota/turns display, PUSH button, game-over/clear screens.
+9. **Deploy** — wire up Cloudflare Workers static-asset deploy.
+
+## Notes log
+
+`docs/NOTES.md` tracks open questions and small, non-obvious decisions as the project evolves (product name, icon theme, quota/turn numbers, etc. currently live there). Keep it up to date:
+
+- Hit something genuinely unclear (ambiguous spec, a question only the user can answer)? Add it under "Open questions."
+- Made a decision that isn't obvious from the code and would be easy to accidentally reverse or contradict later? Add it under "Decisions" with a one-line what + why.
+- Resolved an open question? Move it to "Decisions" (with the why) or delete it if it turned out not to matter.
+
+Don't log routine work — this is for things a future session, or the user, would otherwise have to rediscover or ask about again.
