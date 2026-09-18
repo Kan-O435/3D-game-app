@@ -51,8 +51,8 @@ Scoped as one MVP effort, in this order. Nothing below is started except where m
 1. **Setup** — Vite + TS + R3F installed, react/react-dom pinned (see above). ✅ done.
 2. **3D scene fundamentals** — `src/scene/Room.tsx` (inside-out box, BackSide), `src/scene/Lighting.tsx` (dim ambient + one spotlight), `src/scene/FixedCamera.tsx` (fixed first-person, no controls). ✅ done.
 3. **Cabinet + grid** — `src/scene/Cabinet.tsx` + `src/scene/ReelGrid.tsx`: cabinet box and the 15-cell (5×3) plane grid, each cell showing a placeholder numbered swatch texture (`src/scene/icons.ts`). ✅ structurally done — the swatches are throwaway; real icon art swaps in once the icon theme is decided (still undecided, see `docs/NOTES.md`). Grid uses unlit `meshBasicMaterial` so it reads clearly regardless of room lighting, like a backlit real cabinet display.
-4. **Spin logic** (`src/game/`) — weighted RNG over 15 symbols, win-line detection, payout table. Pure TS, no React/three — should be straightforward to unit test once a test runner exists. 🔶 next.
-5. **Reel animation** — spin-then-stop easing, win highlight effects.
+4. **Spin logic** (`src/game/`) — `layout.ts` (grid shape), `symbols.ts` (weighted symbol table), `rng.ts` (weighted draw), `spin.ts` (fills the grid), `paylines.ts` (row-based win detection + payout). Pure TS, no React/three, no test runner wired up yet but verified manually to draw symbols in the correct weighted proportions and detect wins correctly. ✅ done — weights/payouts/multipliers are placeholders, tracked in `docs/NOTES.md`.
+5. **Reel animation** — spin-then-stop easing, win highlight effects. 🔶 next — this is also where `src/game/spin.ts`'s output first needs to reach `src/scene/ReelGrid.tsx` (currently the grid only shows static placeholder textures, not real spin results).
 6. **Audio** — BGM (loop + mute toggle) and SE (spin/stop/win/warning) via the Web Audio API.
 7. **Game loop** (`src/store/`) — money/quota/turn state, stage advance, game-over/clear transitions.
 8. **HUD** (`src/ui/`) — money/quota/turns display, PUSH button, game-over/clear screens.

@@ -1,9 +1,7 @@
 import { useMemo } from 'react'
 import { createPlaceholderIconTexture, SYMBOL_COUNT } from './icons'
+import { COLUMNS, ROWS } from '../game/layout'
 
-// 5 reels x 3 rows = 15 visible cells (see CLAUDE.md "Game design constants").
-const COLUMNS = 5
-const ROWS = 3
 const CELL_SIZE = 0.22
 const CELL_GAP = 0.04
 const STEP = CELL_SIZE + CELL_GAP
