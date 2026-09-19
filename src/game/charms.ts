@@ -42,120 +42,120 @@ function boost(m: Modifiers, ids: number[], factor: number) {
   for (const id of ids) m.weightBoosts[id] = (m.weightBoosts[id] ?? 1) * factor
 }
 
-// Names/flavor text are placeholders until the icon theme is settled (see
-// docs/NOTES.md); ids and effects are what the rest of the code depends on.
+// Names/flavor text follow the fan-of-an-idol theme (docs/NOTES.md); ids and
+// effects are what the rest of the code depends on, so reword freely.
 // Prices/effects were tuned by simulation against the payment curve in stage.ts:
 // each charm pays back in ~2 stages, and buying aggressively raises both the
 // odds of an early loss and of a deep run (see docs/NOTES.md).
 export const CHARMS: readonly CharmDef[] = [
   {
     id: 'blood-pact',
-    name: '血の契約',
+    name: '限定ペンライト',
     description: '配当が 25% 増える',
     price: 60,
     apply: (m) => void (m.payoutMultiplier += 0.25),
   },
   {
     id: 'candle-stub',
-    name: '蝋燭の残り火',
+    name: '有給休暇',
     description: '各ステージのターン +1',
     price: 25,
     apply: (m) => void (m.extraTurns += 1),
   },
   {
     id: 'rusty-key',
-    name: '錆びた鍵',
+    name: '握手券の束',
     description: '低位シンボルが出やすくなる',
     price: 20,
     apply: (m) => boost(m, range(0, 4), 3),
   },
   {
     id: 'black-cat-eye',
-    name: '黒猫の目',
+    name: '限定トレカ',
     description: 'レアシンボルが出やすくなる',
     price: 80,
     apply: (m) => boost(m, range(10, 11), 6),
   },
   {
     id: 'pity-coin',
-    name: '慰めの硬貨',
+    name: 'チェキ券',
     description: '外れたスピンでも +5 コイン',
     price: 80,
     apply: (m) => void (m.consolation += 5),
   },
   {
     id: 'silver-tooth',
-    name: '銀の歯',
+    name: 'ファンレター',
     description: '当たりのラインごとに +5 コイン',
     price: 40,
     apply: (m) => void (m.winBonus += 5),
   },
   {
     id: 'skull-ring',
-    name: '骸骨の指輪',
+    name: 'ファンサうちわ',
     description: '4個以上揃いの配当が 2.5 倍',
     price: 35,
     apply: (m) => void (m.longMatchMultiplier *= 2.5),
   },
   {
     id: 'fate-dice',
-    name: '運命の賽',
-    description: '支払いのあと +30 コイン',
+    name: '臨時ボーナス',
+    description: '納付のあと +30 コイン',
     price: 55,
     apply: (m) => void (m.clearBonus += 30),
   },
   {
     id: 'wild-tongue',
-    name: '偽りの舌',
-    description: 'ワイルド(W)が出やすくなる',
+    name: '推しTシャツ',
+    description: '推し(W)が出やすくなる',
     price: 45,
     apply: (m) => boost(m, [WILD_ID], 2),
   },
   {
     id: 'star-lure',
-    name: '星の誘い',
-    description: 'ボーナス(★)が出やすくなる',
+    name: 'サイリウム',
+    description: 'ファンサ(★)が出やすくなる',
     price: 55,
     apply: (m) => boost(m, [SCATTER_ID], 1.4),
   },
   {
     id: 'overclock',
-    name: '過負荷駆動',
-    description: '獲得する性能値が 1.5 倍',
+    name: 'オタ芸の特訓',
+    description: '獲得する熱量が 1.5 倍',
     price: 40,
     apply: (m) => void (m.perfMultiplier *= 1.5),
   },
   {
     id: 'cheap-lever',
-    name: '古びたレバー',
+    name: '会員証',
     description: 'スピン費が 25% 安くなる',
     price: 30,
     apply: (m) => void (m.spinCostFactor *= 0.75),
   },
   {
     id: 'tax-break',
-    name: '減免通知',
+    name: '早割チケット',
     description: '納付額が 15% 減る',
     price: 50,
     apply: (m) => void (m.dueFactor *= 0.85),
   },
   {
     id: 'firewall',
-    name: '防火壁',
-    description: '「6」が3つ揃っても獲得が没収されない',
+    name: 'ミュート機能',
+    description: '炎上(6)が3つ揃っても獲得が没収されない',
     price: 20,
     apply: (m) => void (m.rateLimitImmune = true),
   },
   {
     id: 'v-scar',
-    name: '裂け目',
+    name: 'ヲタ芸 V字',
     description: 'V字・逆V字のラインでも当たる',
     price: 80,
     apply: (m) => void m.extraPatterns.push('v', 'inv-v'),
   },
   {
     id: 'crooked-blade',
-    name: '歪んだ刃',
+    name: 'ヲタ芸 斜め',
     description: '斜めのラインでも当たる',
     price: 80,
     apply: (m) => void m.extraPatterns.push('diag-down', 'diag-up'),
