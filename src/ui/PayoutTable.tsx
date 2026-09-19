@@ -84,7 +84,10 @@ export function PayoutTable() {
           ))}
         </tbody>
       </table>
-      <div style={{ color: '#8a7a62', marginTop: 4, fontSize: 11 }}>★は 3・4・5個の枚数、どこでも可</div>
+      <div style={{ color: '#8a7a62', marginTop: 4, fontSize: 11, lineHeight: 1.5 }}>
+        左右どちらの端からでも2連から、途中は3連から
+        <br />★は 3・4・5個の枚数、どこでも可
+      </div>
     </div>
   )
 }

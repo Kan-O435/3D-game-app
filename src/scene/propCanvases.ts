@@ -61,7 +61,7 @@ export function rulesCanvas() {
   text(ctx, 'STANDARDS', 42, 12, 10, '#231d16', 'center')
   ctx.fillStyle = '#231d16'
   ctx.fillRect(6, 20, 72, 1)
-  ;['1 SPIN = 1 TURN', 'MATCH FROM LEFT', 'W  = ANY SYMBOL', '*  = 3+ ANYWHERE', 'FLAME x3 = LOSS', 'PAY OR ELSE.'].forEach((line, i) => {
+  ;['1 SPIN = 1 TURN', 'MATCH FROM EDGES', 'W  = ANY SYMBOL', '*  = 3+ ANYWHERE', 'FLAME x3 = LOSS', 'PAY OR ELSE.'].forEach((line, i) => {
     text(ctx, line, 7, 32 + i * 14, 7, i === 5 ? '#a3231b' : '#3a3024')
   })
   return canvas
