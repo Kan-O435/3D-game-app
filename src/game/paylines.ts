@@ -11,14 +11,18 @@ export interface LineWin {
 
 // Classic left-to-right slot rule: each row is a payline, and a win is a run
 // of the same symbol starting at column 0, at least MIN_MATCH long.
-const MIN_MATCH = 3
+// 2 (not 3) because with 15 symbols a 3-run only hits ~3% of spins, which
+// makes a turn-limited quota game pure luck — see docs/NOTES.md.
+const MIN_MATCH = 2
 
-// Longer runs pay progressively more than a flat per-cell rate. Placeholder,
-// same caveat as symbols.ts's payout values — not tuned.
+// Longer runs pay progressively more than a flat per-cell rate. Tuned by
+// simulation together with src/game/stage.ts's quota curve (median run clears
+// ~4 stages); still not final balance.
 const MATCH_MULTIPLIER: Readonly<Record<number, number>> = {
-  3: 1,
-  4: 3,
-  5: 10,
+  2: 2,
+  3: 6,
+  4: 20,
+  5: 60,
 }
 
 function payoutFor(symbolId: number, matchLength: number): number {

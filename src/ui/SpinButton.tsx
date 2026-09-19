@@ -5,7 +5,9 @@ import { initAudio } from '../audio/audioEngine'
 // Phase 8 builds this out into the real HUD (money/quota/turns around it).
 export function SpinButton() {
   const spin = useGameStore((s) => s.spin)
+  const restart = useGameStore((s) => s.restart)
   const isSpinning = useGameStore((s) => s.isSpinning)
+  const isGameOver = useGameStore((s) => s.status === 'gameOver')
 
   return (
     <button
@@ -14,7 +16,8 @@ export function SpinButton() {
         // gesture — this is the first guaranteed one, so start/resume it
         // here rather than trying to play BGM on mount.
         initAudio()
-        spin()
+        if (isGameOver) restart()
+        else spin()
       }}
       disabled={isSpinning}
       style={{
@@ -33,7 +36,7 @@ export function SpinButton() {
         cursor: isSpinning ? 'default' : 'pointer',
       }}
     >
-      {isSpinning ? 'SPINNING...' : 'PUSH'}
+      {isSpinning ? 'SPINNING...' : isGameOver ? 'RETRY' : 'PUSH'}
     </button>
   )
 }
