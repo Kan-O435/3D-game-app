@@ -39,6 +39,9 @@ ordinary twelve. Name the files by what they are — `flame.png` (炎上, symbol
 (`12.png`, `13.png`, `14.png`). Same image tips as above. (Putting `12.png` …
 `14.png` in `icons/` still works too, and wins if both exist.)
 
+Specials are shown whole (not cropped like the photos), so illustrations with a
+transparent background work best.
+
 ## Wall poster — `posters/NN.png` (one per stage)
 
 The poster on the wall behind the machine changes with the stage:
@@ -61,6 +64,8 @@ stage begins.
 - `icons/00.png` – `11.png`: 12 portrait photos for the 12 ordinary symbols
   (`10.png`/`11.png` are the two rare ones). The flame, ★ and W (`12`–`14`) still
   use their built-in drawings until you add images for them in `specials/`.
+- `specials/flame.png`, `star.png`, `wild.png`: a diamond (炎上 — the curse), a crown (★),
+  a heart (W / 推し). Made transparent from the white-background originals.
 - `posters/no1.png`: the stage-1 poster (any name ending in the stage number works,
   so `no1.png` = stage 1). Stages 2–5 use the built-in poster until you add
   `no2.png` … or `02.png` …
