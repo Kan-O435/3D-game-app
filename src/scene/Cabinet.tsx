@@ -24,7 +24,7 @@ const BULBS = 11 // chase lights along the top of the sign
 export function Cabinet() {
   const root = useRef<Group>(null)
   const rattle = useRef(0)
-  const bodyTexture = useMemo(() => toTexture(noiseCanvas(32, '#57231d', ['#43190f', '#6a2c24', '#36140f', '#7a3a2c'], 260, 21), { repeat: [3, 5] }), [])
+  const bodyTexture = useMemo(() => toTexture(noiseCanvas(32, '#d6a61c', ['#b88a10', '#e8bd32', '#9a7008', '#f1cf58'], 240, 21), { repeat: [3, 5] }), [])
   const frameColor = '#15110e'
 
   // The whole machine has weight: it rattles while the reels spin, thumps as each
@@ -51,15 +51,26 @@ export function Cabinet() {
       {/* plinth + body + sign box */}
       <mesh position={[0, BODY_Y / 2, 0.03]}>
         <boxGeometry args={[WIDTH + 0.22, BODY_Y, 0.62]} />
-        <meshStandardMaterial color="#1c1512" roughness={0.9} />
+        <meshStandardMaterial color="#231a0a" roughness={0.9} />
       </mesh>
       <mesh position={[0, BODY_Y + BODY_H / 2, 0]}>
         <boxGeometry args={[WIDTH, BODY_H, FRONT * 2]} />
         <meshStandardMaterial map={bodyTexture} roughness={0.85} />
       </mesh>
+      {/* bright trim down both sides and along the top of the body */}
+      {[-1, 1].map((side) => (
+        <mesh key={side} position={[side * (WIDTH / 2 - 0.018), BODY_Y + BODY_H / 2, FRONT + 0.004]}>
+          <boxGeometry args={[0.036, BODY_H, 0.012]} />
+          <meshStandardMaterial color="#f6d24a" roughness={0.45} emissive="#7a5a08" emissiveIntensity={0.35} />
+        </mesh>
+      ))}
+      <mesh position={[0, BODY_Y + BODY_H - 0.018, FRONT + 0.004]}>
+        <boxGeometry args={[WIDTH, 0.036, 0.012]} />
+        <meshStandardMaterial color="#f6d24a" roughness={0.45} emissive="#7a5a08" emissiveIntensity={0.35} />
+      </mesh>
       <mesh position={[0, BODY_Y + BODY_H + 0.17, 0.03]}>
         <boxGeometry args={[WIDTH, 0.34, FRONT * 2 + 0.06]} />
-        <meshStandardMaterial color="#2a1613" roughness={0.8} />
+        <meshStandardMaterial color="#5e420a" roughness={0.75} />
       </mesh>
       <MarqueeSign position={[0, BODY_Y + BODY_H + 0.17, FRONT + 0.065]} />
       <ChaseBulbs y={BODY_Y + BODY_H + 0.355} z={FRONT + 0.04} />
@@ -85,7 +96,7 @@ export function Cabinet() {
       {[-0.42, -0.14, 0.14, 0.42].map((x, i) => (
         <mesh key={x} position={[x, 0.605, FRONT + 0.02]}>
           <boxGeometry args={[0.1, 0.05, 0.03]} />
-          <meshStandardMaterial color={['#6b5a44', '#8a6a44', '#b03a2a', '#2f6a4a'][i]} roughness={0.5} />
+          <meshStandardMaterial color={['#7a5a1a', '#a0741c', '#b03a2a', '#2f6a4a'][i]} roughness={0.5} />
         </mesh>
       ))}
 

@@ -80,12 +80,12 @@ function useRollingNumber(target: number, durationMs = 500): number {
 /** The lit sign on top of the machine. */
 export function MarqueeSign({ position }: { position: [number, number, number] }) {
   const draw = useCallback<Draw>((ctx, w, h) => {
-    ctx.fillStyle = '#07130f'
+    ctx.fillStyle = '#1c1304'
     ctx.fillRect(0, 0, w, h)
-    ctx.strokeStyle = '#1d4a3c'
+    ctx.strokeStyle = '#7a5a10'
     ctx.lineWidth = 2
     ctx.strokeRect(3, 3, w - 6, h - 6)
-    glowText(ctx, MACHINE_TITLE, w / 2, h / 2 + 1, 15, '#7dffd9')
+    glowText(ctx, MACHINE_TITLE, w / 2, h / 2 + 1, 15, '#ffd84a')
   }, [])
   return <Screen width={1.2} height={0.22} position={position} texture={useScreen(160, 30, draw)} />
 }
@@ -111,11 +111,11 @@ export function FeePlate({ position }: { position: [number, number, number] }) {
   const spinCost = useGameStore((s) => s.spinCost)
   const draw = useCallback<Draw>(
     (ctx, w, h) => {
-      ctx.fillStyle = '#d9c9a0'
+      ctx.fillStyle = '#1b1613'
       ctx.fillRect(0, 0, w, h)
-      ctx.fillStyle = 'rgba(0,0,0,0.12)'
-      ctx.fillRect(0, h - 3, w, 3)
-      glowText(ctx, `FEE ${spinCost}`, w / 2, h / 2 + 1, 15, '#3a2a16')
+      ctx.strokeStyle = '#a07a1c'
+      ctx.strokeRect(0.5, 0.5, w - 1, h - 1)
+      glowText(ctx, `FEE ${spinCost}`, w / 2, h / 2 + 1, 15, '#ffd84a')
     },
     [spinCost],
   )
