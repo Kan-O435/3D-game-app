@@ -28,10 +28,10 @@ Vite + TypeScript + React + React Three Fiber (`@react-three/fiber`, `@react-thr
 Not `^19.2.8`. `@react-three/fiber`'s peer range is `react@">=19 <19.3"` (true even on its 10.x canary builds as of this writing); a caret range resolves to 19.3.0 and `npm install` fails with ERESOLVE. Keep the exact pin — or re-check `@react-three/fiber`'s current peerDependencies — before bumping React.
 
 ### Module boundaries
-- `src/game/` — framework-agnostic TS: weighted symbol RNG (`rng.ts`), grid fill (`spin.ts`), win-line detection + payout (`paylines.ts`), the symbol/layout tables (`symbols.ts`, `layout.ts`). No React or three.js imports; kept unit-testable in isolation from rendering (verified manually so far — no test runner wired up yet).
+- `src/game/` — framework-agnostic TS: weighted symbol RNG (`rng.ts`), grid fill (`spin.ts`), win-line detection + payout (`paylines.ts`), the symbol/layout tables (`symbols.ts`, `layout.ts`), turn/quota curve (`stage.ts`), and charms (`charms.ts` — data + `resolveModifiers`/`computePayout`/`drawShopOffer`). No React or three.js imports; kept unit-testable in isolation from rendering (verified manually so far — no test runner wired up yet).
 - `src/scene/` — R3F components (`Room`, `Lighting`, `FixedCamera`, `Cabinet`, `ReelGrid`). Reads `src/store` state and renders/animates it; does not decide game outcomes itself — `ReelGrid`'s roll animation just delays *revealing* the grid the store already computed.
-- `src/ui/` — DOM-rendered React HUD, overlaid on the `<Canvas>` (sibling `<div>`s, not inside the Canvas tree). `Hud.tsx` (money/quota/stage/turns panel + "+N" payout pop + "STAGE n CLEAR" banner), `SpinButton.tsx` (PUSH), `MuteButton.tsx`, `GameOverScreen.tsx` (overlay with RETRY). All read `src/store` only; callout animations are CSS keyframes in `index.css`, restarted by changing the element's `key` (no timers).
-- `src/store/` — zustand (`gameStore.ts`). Holds `grid`/`isSpinning`/`lastWins`/`lastPayout` plus the run state (`money`/`stage`/`quota`/`turnsLeft`/`status`/`stageClearCount`) and `spin()`/`finishSpin()`/`restart()`; `spin()` computes the full result and spends the turn immediately, `finishSpin()` is called by `ReelGrid` once the reel animation visually catches up and is where the payout is banked and stage clear / game over is decided.
+- `src/ui/` — DOM-rendered React HUD, overlaid on the `<Canvas>` (sibling `<div>`s, not inside the Canvas tree). `Hud.tsx` (money/quota/stage/turns panel, owned-charm list, "+N" payout pop), `SpinButton.tsx` (PUSH, only while `playing`), `MuteButton.tsx`, `Shop.tsx` (between-stage charm shop, NEXT STAGE), `GameOverScreen.tsx` (RETRY). All read `src/store` only; the payout pop is a CSS keyframe restarted by changing the element's `key` (no timers).
+- `src/store/` — zustand (`gameStore.ts`). Holds `grid`/`isSpinning`/`lastWins`/`lastPayout`, run state (`money`/`stage`/`quota`/`turnsLeft`/`status`), and charm state (`charms`/`shopOffer`). `status` is `'playing' | 'shop' | 'gameOver'`. Actions: `spin()` (decides the result and spends the turn up front, applying charm modifiers), `finishSpin()` (called by `ReelGrid` when the animation catches up; banks the payout, then decides stage clear → `shop` / game over), `buyCharm()`, `leaveShop()` (resets turns, incl. +turn charms), `restart()`.
 - `src/audio/` — `audioEngine.ts`, a framework-agnostic Web Audio wrapper (no React/three). Everything is synthesized (oscillators + envelopes) — there are no sound files, same spirit as `scene/icons.ts`'s placeholder textures. `initAudio()` must be called from a user-gesture handler (browser autoplay policy); `store` and `scene` both call into this directly for side effects (spin-start/reel-stop/win SE), which is a deliberate exception to `store`/`scene` otherwise not reaching outside their own layer.
 
 ### Game design constants
@@ -45,7 +45,7 @@ Cloudflare Workers (static assets) is the intended deploy target; not yet wired 
 
 ## Roadmap
 
-Scoped as one MVP effort, in this order. Nothing below is started except where marked.
+Phases 1–9 are the MVP loop (playable start to finish); 10+ deepen it toward the CloverPit-style feel. Nothing below is started except where marked.
 
 1. **Setup** — Vite + TS + R3F installed, react/react-dom pinned (see above). ✅ done.
 2. **3D scene fundamentals** — `src/scene/Room.tsx` (inside-out box, BackSide), `src/scene/Lighting.tsx` (dim ambient + one spotlight), `src/scene/FixedCamera.tsx` (fixed first-person, no controls). ✅ done.
@@ -54,8 +54,13 @@ Scoped as one MVP effort, in this order. Nothing below is started except where m
 5. **Reel animation** — `src/store/gameStore.ts` + `src/scene/ReelGrid.tsx`: columns roll (cycling textures) and stop left-to-right with a stagger, then reveal the store's already-computed grid; winning cells (from `lastWins`) pulse once stopped. A minimal `src/ui/SpinButton.tsx` triggers it. ✅ done — durations/stagger/pulse are feel, not tuned.
 6. **Audio** — `src/audio/audioEngine.ts`: synthesized BGM drone (starts + resumes on first user gesture, via `SpinButton`) and SE for spin-start/reel-stop/win, plus a `MuteButton`. ✅ done — `playWarning()` is now called from the store when ≤2 turns remain (Phase 7).
 7. **Game loop** — `src/store/gameStore.ts` (money/stage/quota/turnsLeft/status, `restart()`) + `src/game/stage.ts` (turns-per-stage, `quotaForStage`). Stage advances when money ≥ quota (money carries over), game over when turns hit 0 short of quota; `SpinButton` doubles as RETRY on game over. ✅ done — stages are endless (no final-clear screen), numbers are simulation-tuned, see `docs/NOTES.md`. No visible money/quota/turn readout yet — that's Phase 8.
-8. **HUD** (`src/ui/`) — `Hud.tsx` (stage/money/quota bar/turns, red at ≤ `WARNING_TURNS`, payout pop, stage-clear banner), `GameOverScreen.tsx` (RETRY), `SpinButton.tsx` hidden on game over. ✅ done — styling is functional placeholder (inline styles, no horror theming yet); no final-clear screen since stages are endless (see `docs/NOTES.md`).
-9. **Deploy** — 🔶 next. Wire up Cloudflare Workers static-asset deploy.
+8. **HUD** (`src/ui/`) — `Hud.tsx` (stage/money/quota bar/turns, red at ≤ `WARNING_TURNS`, payout pop), `GameOverScreen.tsx` (RETRY), `SpinButton.tsx` shown only while playing. ✅ done — styling is functional placeholder (inline styles, no horror theming yet); the old "STAGE CLEAR" banner was folded into `Shop.tsx`'s heading. No final-clear screen since stages are endless (see `docs/NOTES.md`).
+9. **Charms + shop** — `src/game/charms.ts` (8 charms as pure data nudging a `Modifiers`), store `shop` status, `src/ui/Shop.tsx`. A stage clear opens the shop (3 random unowned charms, buy with money, then NEXT STAGE). ✅ done — names/flavor are placeholders, prices/effects simulation-tuned, see `docs/NOTES.md`.
+10. **Pattern expansion** — replace row-only win detection with a list of patterns (diagonals, V, …) and per-pattern multipliers. 🔶 next.
+11. **Symbol personality** — special symbols (wild/bonus) for some of the 15.
+12. **Room + atmosphere** — horror lighting/postprocessing, low-turn warning visuals, first-person feel, real icon art.
+13. **Polish** — title/how-to-play, best-stage record (localStorage), game-clear decision, mobile layout, bundle splitting, tests for `src/game/`.
+14. **Deploy** — wire up Cloudflare Workers static-asset deploy (deliberately last: finish the game first).
 
 ## Notes log
 

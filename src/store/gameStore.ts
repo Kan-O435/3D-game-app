@@ -2,7 +2,10 @@ import { create } from 'zustand'
 import {
   spin as drawGrid,
   findLineWins,
-  totalPayout,
+  computePayout,
+  resolveModifiers,
+  drawShopOffer,
+  findCharm,
   quotaForStage,
   CELL_COUNT,
   SYMBOL_COUNT,
@@ -14,7 +17,8 @@ import {
 } from '../game'
 import { playSpinStart, playWarning } from '../audio/audioEngine'
 
-export type GameStatus = 'playing' | 'gameOver'
+// 'shop' sits between stages: entered on a stage clear, left via leaveShop().
+export type GameStatus = 'playing' | 'shop' | 'gameOver'
 
 interface GameState {
   grid: Grid
@@ -26,13 +30,15 @@ interface GameState {
   stage: number
   quota: number
   turnsLeft: number
-  // Bumped each time a stage is cleared, so the HUD can react (flash a
-  // "STAGE CLEAR" banner, etc.) without needing to diff `stage` itself.
-  stageClearCount: number
+  // Owned charm ids (each can be owned once) and the current shop's stock.
+  charms: string[]
+  shopOffer: string[]
   spin: () => void
   // Called by the reel animation once every column has visually stopped.
   // This is where the payout lands in `money` and the stage outcome is decided.
   finishSpin: () => void
+  buyCharm: (id: string) => void
+  leaveShop: () => void
   restart: () => void
 }
 
@@ -50,16 +56,18 @@ const freshRun = () => ({
   stage: 1,
   quota: quotaForStage(1),
   turnsLeft: TURNS_PER_STAGE,
-  stageClearCount: 0,
+  charms: [] as string[],
+  shopOffer: [] as string[],
 })
 
 export const useGameStore = create<GameState>((set, get) => ({
   ...freshRun(),
   spin: () => {
-    const { isSpinning, status, turnsLeft } = get()
+    const { isSpinning, status, turnsLeft, charms } = get()
     if (isSpinning || status !== 'playing' || turnsLeft <= 0) return
     playSpinStart()
-    const grid = drawGrid()
+    const mods = resolveModifiers(charms)
+    const grid = drawGrid(Math.random, mods.weightBoosts)
     const lastWins = findLineWins(grid)
     // The result is decided now, but stays hidden (see ReelGrid's roll
     // animation) until the reels visually stop and call finishSpin().
@@ -68,7 +76,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       grid,
       isSpinning: true,
       lastWins,
-      lastPayout: totalPayout(lastWins),
+      lastPayout: computePayout(lastWins, mods),
       turnsLeft: turnsLeft - 1,
     })
   },
@@ -77,15 +85,16 @@ export const useGameStore = create<GameState>((set, get) => ({
     const money = s.money + s.lastPayout
 
     if (money >= s.quota) {
-      // Money carries over; only the turn allowance resets and the bar rises.
+      // Money carries over. The turn allowance resets when the shop is left,
+      // so charms bought there (e.g. +1 turn) count for the coming stage.
       const stage = s.stage + 1
       set({
         isSpinning: false,
-        money,
+        money: money + resolveModifiers(s.charms).clearBonus,
         stage,
         quota: quotaForStage(stage),
-        turnsLeft: TURNS_PER_STAGE,
-        stageClearCount: s.stageClearCount + 1,
+        status: 'shop',
+        shopOffer: drawShopOffer(s.charms),
       })
       return
     }
@@ -97,6 +106,22 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     if (s.turnsLeft <= WARNING_TURNS) playWarning()
     set({ isSpinning: false, money })
+  },
+  buyCharm: (id) => {
+    const { status, shopOffer, charms, money } = get()
+    const charm = findCharm(id)
+    if (status !== 'shop' || !charm || !shopOffer.includes(id) || charms.includes(id)) return
+    if (money < charm.price) return
+    set({ money: money - charm.price, charms: [...charms, id] })
+  },
+  leaveShop: () => {
+    const { status, charms } = get()
+    if (status !== 'shop') return
+    set({
+      status: 'playing',
+      shopOffer: [],
+      turnsLeft: TURNS_PER_STAGE + resolveModifiers(charms).extraTurns,
+    })
   },
   restart: () => set(freshRun()),
 }))

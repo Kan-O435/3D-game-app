@@ -1,13 +1,19 @@
 import { SYMBOLS } from './symbols'
 
-const TOTAL_WEIGHT = SYMBOLS.reduce((sum, s) => sum + s.weight, 0)
-
 // `random` is injectable so this stays deterministic under test.
-export function drawSymbol(random: () => number = Math.random): number {
-  let roll = random() * TOTAL_WEIGHT
+// `weightBoosts` (symbolId -> factor) lets charms skew the draw; omitted, it's
+// the plain weighted table.
+export function drawSymbol(
+  random: () => number = Math.random,
+  weightBoosts: Readonly<Record<number, number>> = {},
+): number {
+  const weightOf = (s: (typeof SYMBOLS)[number]) => s.weight * (weightBoosts[s.id] ?? 1)
+  const total = SYMBOLS.reduce((sum, s) => sum + weightOf(s), 0)
+  let roll = random() * total
   for (const symbol of SYMBOLS) {
-    if (roll < symbol.weight) return symbol.id
-    roll -= symbol.weight
+    const w = weightOf(symbol)
+    if (roll < w) return symbol.id
+    roll -= w
   }
   // Floating-point safety net — `roll` should always land inside the loop
   // above, but if rounding pushes it past the last bucket, fall back to it.

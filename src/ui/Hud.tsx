@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { useGameStore } from '../store/gameStore'
-import { WARNING_TURNS } from '../game'
+import { WARNING_TURNS, findCharm } from '../game'
 
 const panelStyle: CSSProperties = {
   position: 'absolute',
@@ -35,7 +35,7 @@ export function Hud() {
   const turnsLeft = useGameStore((s) => s.turnsLeft)
   const isSpinning = useGameStore((s) => s.isSpinning)
   const lastPayout = useGameStore((s) => s.lastPayout)
-  const stageClearCount = useGameStore((s) => s.stageClearCount)
+  const charms = useGameStore((s) => s.charms)
 
   const progress = Math.min(1, money / quota)
   const lowTurns = turnsLeft <= WARNING_TURNS
@@ -72,6 +72,15 @@ export function Hud() {
             {turnsLeft}
           </span>
         </div>
+        {charms.length > 0 && (
+          <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #444', fontSize: 12, color: '#bbb' }}>
+            {charms.map((id) => (
+              <div key={id} title={findCharm(id)?.description}>
+                ◆ {findCharm(id)?.name}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Payout only shows once the reels have visibly stopped, matching when
@@ -79,12 +88,6 @@ export function Hud() {
       {!isSpinning && lastPayout > 0 && (
         <div key={`${stage}-${turnsLeft}-${money}`} className="hud-pop" style={calloutStyle('#f1c40f', 48, '30%')}>
           +{lastPayout}
-        </div>
-      )}
-
-      {stageClearCount > 0 && (
-        <div key={stageClearCount} className="hud-banner" style={calloutStyle('#2ecc71', 40, '18%')}>
-          STAGE {stage - 1} CLEAR
         </div>
       )}
     </>

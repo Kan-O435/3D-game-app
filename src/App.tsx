@@ -4,6 +4,7 @@ import { SpinButton } from './ui/SpinButton'
 import { MuteButton } from './ui/MuteButton'
 import { Hud } from './ui/Hud'
 import { GameOverScreen } from './ui/GameOverScreen'
+import { Shop } from './ui/Shop'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
       <Hud />
       <SpinButton />
       <MuteButton />
+      <Shop />
       <GameOverScreen />
     </div>
   )

@@ -1,13 +1,14 @@
 import { useGameStore } from '../store/gameStore'
 import { initAudio } from '../audio/audioEngine'
 
-// The PUSH button. Hidden on game over — GameOverScreen owns the RETRY button.
+// The PUSH button. Only shown while playing — GameOverScreen owns RETRY and
+// Shop owns NEXT STAGE.
 export function SpinButton() {
   const spin = useGameStore((s) => s.spin)
   const isSpinning = useGameStore((s) => s.isSpinning)
-  const isGameOver = useGameStore((s) => s.status === 'gameOver')
+  const isPlaying = useGameStore((s) => s.status === 'playing')
 
-  if (isGameOver) return null
+  if (!isPlaying) return null
 
   return (
     <button
