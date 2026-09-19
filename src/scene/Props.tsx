@@ -3,6 +3,7 @@ import { AdditiveBlending, DoubleSide } from 'three'
 import { glowCanvas, noiseCanvas, toTexture, windowCanvas } from './canvasTextures'
 import { exchangeSignCanvas, idolPosterCanvas, monitorCanvas, noteCanvas, plateCanvas, rulesCanvas, slipsBoardCanvas, workOrderCanvas } from './propCanvases'
 import { AimedSpot } from './AimedSpot'
+import { POSTER_URL, drawFitted, loadImage } from './artAssets'
 import { ROOM } from './roomLayout'
 
 const BACK = ROOM.minZ // z of the back wall
@@ -24,7 +25,7 @@ export function Props() {
       notes: [61, 62, 63].map((seed) => toTexture(noteCanvas(seed))),
       board: toTexture(slipsBoardCanvas()),
       sign: toTexture(exchangeSignCanvas()),
-      idol: toTexture(idolPosterCanvas()),
+      idol: makePosterTexture(),
       monitor: toTexture(monitorCanvas()),
       reroll: toTexture(plateCanvas('REROLL', '#8a2a20', '#f4e1d8')),
       next: toTexture(plateCanvas('NEXT', '#3a3a3a', '#e6e0d0')),
@@ -153,4 +154,29 @@ export function Props() {
       <pointLight position={[ROOM.maxX - 1.4, 2.3, -0.3]} color="#c9dcc4" intensity={2} distance={5} />
     </>
   )
+}
+
+const POSTER_W = 176
+const POSTER_H = 248 // same 0.72 x 1.02 proportions as the poster plane
+
+// The back-wall poster: the built-in one until a supplied image (src/assets/
+// poster.*) has loaded, then that image, cropped to fill the frame.
+function makePosterTexture() {
+  const canvas = document.createElement('canvas')
+  canvas.width = POSTER_W
+  canvas.height = POSTER_H
+  const ctx = canvas.getContext('2d')!
+  ctx.imageSmoothingEnabled = false
+  ctx.drawImage(idolPosterCanvas(), 0, 0, POSTER_W, POSTER_H)
+  const texture = toTexture(canvas)
+  if (POSTER_URL) {
+    loadImage(POSTER_URL)
+      .then((image) => {
+        ctx.imageSmoothingEnabled = true
+        drawFitted(ctx, image, { x: 0, y: 0, w: POSTER_W, h: POSTER_H }, 'cover')
+        texture.needsUpdate = true
+      })
+      .catch(() => undefined)
+  }
+  return texture
 }

@@ -1,13 +1,15 @@
 import { CanvasTexture } from 'three'
 import { SYMBOL_COUNT, SYMBOLS } from '../game/symbols'
 import { PIXEL_FONT, makeCanvas, toTexture } from './canvasTextures'
+import { drawFitted, iconUrl, loadImage } from './artAssets'
 
 export { SYMBOL_COUNT }
 
 // Placeholder art: a dark tile with a simple coloured glyph per symbol (fan-of-an-
 // idol motifs: glow-stick, ticket, mic, note, crown, cheki camera, the idol...),
 // drawn at 32x32 and sampled nearest-neighbour so it reads as chunky pixel art.
-// Swap in real art whenever it exists (docs/NOTES.md).
+// Real art: any image dropped into src/assets/icons/NN.png (NN = symbol id) replaces
+// its glyph — see artAssets.ts and src/assets/README.md.
 // Must have at least SYMBOL_COUNT entries — keep in sync with game/symbols.ts.
 const TILE = 32
 const C = TILE / 2
@@ -144,22 +146,53 @@ export function symbolColor(symbolIndex: number): string {
   return GLYPHS[symbolIndex % GLYPHS.length].color
 }
 
+// The tile is drawn at 2x the glyph grid so supplied images have some detail.
+const SIZE = TILE * 2
+const IMAGE_MARGIN = 5 // px of tile background left around a supplied image
+
 export function createPlaceholderIconTexture(symbolIndex: number): CanvasTexture {
-  const { canvas, ctx } = makeCanvas(TILE, TILE)
+  const { canvas, ctx } = makeCanvas(SIZE, SIZE)
   const glyph = GLYPHS[symbolIndex % GLYPHS.length]
   const kind = SYMBOLS.find((sym) => sym.id === symbolIndex)?.kind ?? 'normal'
 
-  ctx.fillStyle = kind === 'curse' ? '#2a0d0c' : '#0e1013'
-  ctx.fillRect(0, 0, TILE, TILE)
-  glyph.draw(ctx, glyph.color)
-
+  const drawTileBase = () => {
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.clearRect(0, 0, SIZE, SIZE)
+    ctx.fillStyle = kind === 'curse' ? '#2a0d0c' : '#0e1013'
+    ctx.fillRect(0, 0, SIZE, SIZE)
+  }
   // Tile border: a thin tint of the glyph colour; specials get a bright frame
   // so wild / scatter / curse stand out at a glance. (The curse is a flame — 炎上.)
-  ctx.globalAlpha = kind === 'normal' ? 0.55 : 1
-  ctx.strokeStyle = kind === 'normal' ? glyph.color : '#ffffff'
-  ctx.lineWidth = kind === 'normal' ? 1.5 : 2.5
-  ctx.strokeRect(1, 1, TILE - 2, TILE - 2)
-  ctx.globalAlpha = 1
+  const drawBorder = () => {
+    ctx.setTransform(SIZE / TILE, 0, 0, SIZE / TILE, 0, 0)
+    ctx.globalAlpha = kind === 'normal' ? 0.55 : 1
+    ctx.strokeStyle = kind === 'normal' ? glyph.color : '#ffffff'
+    ctx.lineWidth = kind === 'normal' ? 1.5 : 2.5
+    ctx.strokeRect(1, 1, TILE - 2, TILE - 2)
+    ctx.globalAlpha = 1
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+  }
 
-  return toTexture(canvas)
+  // Placeholder first (so there's something to show immediately)…
+  drawTileBase()
+  ctx.setTransform(SIZE / TILE, 0, 0, SIZE / TILE, 0, 0)
+  glyph.draw(ctx, glyph.color)
+  drawBorder()
+
+  const texture = toTexture(canvas)
+
+  // …then swap in the supplied image once it has loaded, if there is one.
+  const url = iconUrl(symbolIndex)
+  if (url) {
+    loadImage(url)
+      .then((image) => {
+        drawTileBase()
+        drawFitted(ctx, image, { x: IMAGE_MARGIN, y: IMAGE_MARGIN, w: SIZE - IMAGE_MARGIN * 2, h: SIZE - IMAGE_MARGIN * 2 }, 'contain')
+        drawBorder()
+        texture.needsUpdate = true
+      })
+      .catch(() => undefined) // keep the placeholder if the file can't be read
+  }
+
+  return texture
 }
