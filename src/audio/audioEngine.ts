@@ -128,6 +128,12 @@ export function playWin(): void {
   }
 }
 
+// A harsh low buzz for a rate limit (the spin's winnings were forfeited).
+export function playRateLimit(): void {
+  playTone(90, 0.35, { type: 'sawtooth', gain: 0.35 })
+  playTone(70, 0.35, { type: 'square', gain: 0.25, delay: 0.12 })
+}
+
 // Fired by the store when the stage is nearly out of turns.
 export function playWarning(): void {
   playTone(110, 0.3, { type: 'sawtooth', gain: 0.3 })

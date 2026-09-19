@@ -1,6 +1,6 @@
 import { COLUMNS } from './layout'
 import { cellAt, type Grid } from './spin'
-import { SCATTER_ID, SYMBOLS, WILD_ID, type SymbolKind } from './symbols'
+import { CURSE_ID, SCATTER_ID, SYMBOLS, WILD_ID, type SymbolKind } from './symbols'
 
 // A payline is one row index per column: [1,1,1,1,1] is the middle row,
 // [0,1,2,1,0] a V. Wins are matched left-to-right from column 0 along it.
@@ -81,7 +81,7 @@ function perfFor(symbolId: number, matchLength: number): number {
 const KIND_BY_ID = new Map(SYMBOLS.map((s) => [s.id, s.kind]))
 
 // Walks one pattern from column 0. Wilds extend a run of whatever normal
-// symbol shows up first (so W,W,A,A,B is a 4-run of A); a scatter or a
+// symbol shows up first (so W,W,A,A,B is a 4-run of A); a scatter, a curse or a
 // different normal symbol ends it. A run of only wilds pays as the wild.
 function winOnPattern(grid: Grid, pattern: Pattern): LineWin | null {
   let base: number | null = null
@@ -90,7 +90,7 @@ function winOnPattern(grid: Grid, pattern: Pattern): LineWin | null {
   for (let col = 0; col < COLUMNS; col++) {
     const id = cellAt(grid, col, pattern.rows[col])
     const kind = KIND_BY_ID.get(id)
-    if (kind === 'scatter') break
+    if (kind === 'scatter' || kind === 'curse') break
     if (kind === 'normal') {
       if (base === null) base = id
       else if (id !== base) break
@@ -143,6 +143,19 @@ export function findLineWins(
   return wins
 }
 
+// The rate limit: this many curse symbols anywhere on the grid and the whole
+// spin's take is forfeited. Returned as a LineWin (payout 0, patternId
+// 'rate-limit') so the renderer can highlight the offending cells; the store
+// swaps it in for the real wins unless a charm makes the player immune, and
+// computePayout treats it as "pays nothing".
+export const RATE_LIMIT_COUNT = 3
+
+export function findRateLimit(grid: Grid): LineWin | null {
+  const cells = grid.flatMap((id, i) => (id === CURSE_ID ? [i] : []))
+  if (cells.length < RATE_LIMIT_COUNT) return null
+  return { patternId: 'rate-limit', symbolId: CURSE_ID, matchLength: cells.length, cells, payout: 0, perf: 0 }
+}
+
 export function totalPayout(wins: readonly LineWin[]): number {
   return wins.reduce((sum, win) => sum + win.payout, 0)
 }
@@ -161,19 +174,19 @@ export interface PayoutRow {
 export function payoutTable(): PayoutRow[] {
   const rows = new Map<string, PayoutRow>()
   for (const s of SYMBOLS) {
-    const key = s.kind === 'scatter' ? 'scatter' : `${s.kind}-${s.payout}-${s.perf}`
+    const key = s.kind === 'scatter' || s.kind === 'curse' ? s.kind : `${s.kind}-${s.payout}-${s.perf}`
     const existing = rows.get(key)
     if (existing) {
       existing.symbolIds.push(s.id)
       continue
     }
-    const lengths = s.kind === 'scatter' ? [3, 4, 5] : [2, 3, 4, 5]
+    const lengths = s.kind === 'scatter' ? [3, 4, 5] : s.kind === 'curse' ? [RATE_LIMIT_COUNT] : [2, 3, 4, 5]
     rows.set(key, {
       kind: s.kind,
       symbolIds: [s.id],
       perf: s.perf,
       lengths,
-      payouts: lengths.map((n) => (s.kind === 'scatter' ? SCATTER_PAYOUT[n] : payoutFor(s.id, n))),
+      payouts: lengths.map((n) => (s.kind === 'scatter' ? SCATTER_PAYOUT[n] : s.kind === 'curse' ? 0 : payoutFor(s.id, n))),
     })
   }
   return [...rows.values()]

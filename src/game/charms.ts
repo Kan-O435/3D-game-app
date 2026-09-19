@@ -24,6 +24,8 @@ export interface Modifiers {
   // Scale the per-spin fee and the stage's debt (1 = unchanged, <1 = cheaper).
   spinCostFactor: number
   dueFactor: number
+  // Ignore the rate limit (three curse symbols no longer wipe the spin).
+  rateLimitImmune: boolean
 }
 
 export interface CharmDef {
@@ -72,7 +74,7 @@ export const CHARMS: readonly CharmDef[] = [
     name: '黒猫の目',
     description: 'レアシンボルが出やすくなる',
     price: 80,
-    apply: (m) => boost(m, range(10, 12), 6),
+    apply: (m) => boost(m, range(10, 11), 6),
   },
   {
     id: 'pity-coin',
@@ -138,6 +140,13 @@ export const CHARMS: readonly CharmDef[] = [
     apply: (m) => void (m.dueFactor *= 0.85),
   },
   {
+    id: 'firewall',
+    name: '防火壁',
+    description: '「6」が3つ揃っても獲得が没収されない',
+    price: 20,
+    apply: (m) => void (m.rateLimitImmune = true),
+  },
+  {
     id: 'v-scar',
     name: '裂け目',
     description: 'V字・逆V字のラインでも当たる',
@@ -170,6 +179,7 @@ export function resolveModifiers(ownedIds: readonly string[]): Modifiers {
     perfMultiplier: 1,
     spinCostFactor: 1,
     dueFactor: 1,
+    rateLimitImmune: false,
   }
   for (const id of ownedIds) findCharm(id)?.apply(m)
   return m
@@ -178,6 +188,8 @@ export function resolveModifiers(ownedIds: readonly string[]): Modifiers {
 // Final coins for one spin, after charm effects. Replaces summing
 // `LineWin.payout` directly now that charms can bend the result.
 export function computePayout(wins: readonly LineWin[], m: Modifiers): number {
+  // A rate limit forfeits the whole spin — no line pay, no bonuses, no consolation.
+  if (wins.some((w) => w.patternId === 'rate-limit')) return 0
   if (wins.length === 0) return m.consolation
   // The long-match bonus is about pattern runs; a scatter count isn't a "run".
   const isLongRun = (w: LineWin) => w.patternId !== 'scatter' && w.matchLength >= 4

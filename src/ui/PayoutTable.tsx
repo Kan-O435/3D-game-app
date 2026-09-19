@@ -56,18 +56,27 @@ export function PayoutTable() {
                   ))}
                 {row.kind === 'wild' && <b style={{ color: '#f1c40f' }}>W ワイルド</b>}
                 {row.kind === 'scatter' && <b style={{ color: '#c77dff' }}>★ ボーナス</b>}
+                {row.kind === 'curse' && <b style={{ color: '#ff5a4a' }}>6 レートリミット</b>}
               </td>
-              {LENGTHS.map((n) => {
-                const i = row.lengths.indexOf(n)
-                return (
-                  <td key={n} style={{ textAlign: 'right', padding: '0 6px' }}>
-                    {i >= 0 ? row.payouts[i] : ''}
+              {row.kind === 'curse' ? (
+                <td colSpan={LENGTHS.length + 1} style={{ padding: '0 6px', color: '#ff8a7a' }}>
+                  3個以上で獲得を全没収
+                </td>
+              ) : (
+                <>
+                  {LENGTHS.map((n) => {
+                    const i = row.lengths.indexOf(n)
+                    return (
+                      <td key={n} style={{ textAlign: 'right', padding: '0 6px' }}>
+                        {i >= 0 ? row.payouts[i] : ''}
+                      </td>
+                    )
+                  })}
+                  <td style={{ textAlign: 'right', padding: '0 6px', color: '#7fd18b' }}>
+                    {row.kind === 'scatter' ? '—' : `×${row.perf}`}
                   </td>
-                )
-              })}
-              <td style={{ textAlign: 'right', padding: '0 6px', color: '#7fd18b' }}>
-                {row.kind === 'scatter' ? '—' : `×${row.perf}`}
-              </td>
+                </>
+              )}
             </tr>
           ))}
         </tbody>

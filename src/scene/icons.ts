@@ -25,23 +25,23 @@ export function createPlaceholderIconTexture(symbolIndex: number): CanvasTexture
   canvas.height = 128
   const ctx = canvas.getContext('2d')!
 
-  ctx.fillStyle = symbolColor(symbolIndex)
+  const kind = SYMBOLS.find((sym) => sym.id === symbolIndex)?.kind ?? 'normal'
+  ctx.fillStyle = kind === 'curse' ? '#5a1414' : symbolColor(symbolIndex)
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
   // Specials get a border and a letter instead of a number so they read as
-  // different at a glance (wild = W, scatter = star).
-  const kind = SYMBOLS.find((sym) => sym.id === symbolIndex)?.kind ?? 'normal'
+  // different at a glance (wild = W, scatter = star, curse = a red 6).
   if (kind !== 'normal') {
     ctx.strokeStyle = '#ffffff'
     ctx.lineWidth = 8
     ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8)
   }
 
-  ctx.fillStyle = kind === 'normal' ? '#00000080' : '#000000cc'
+  ctx.fillStyle = kind === 'curse' ? '#ff5a4a' : kind === 'normal' ? '#00000080' : '#000000cc'
   ctx.font = 'bold 56px sans-serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  const label = kind === 'wild' ? 'W' : kind === 'scatter' ? '★' : String(symbolIndex + 1)
+  const label = kind === 'wild' ? 'W' : kind === 'scatter' ? '★' : kind === 'curse' ? '6' : String(symbolIndex + 1)
   ctx.fillText(label, canvas.width / 2, canvas.height / 2)
 
   const texture = new CanvasTexture(canvas)

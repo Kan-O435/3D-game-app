@@ -35,6 +35,7 @@ export function Hud() {
   const perfNeeded = useGameStore((s) => s.perfNeeded)
   const spinCost = useGameStore((s) => s.spinCost)
   const lastPerf = useGameStore((s) => s.lastPerf)
+  const rateLimited = useGameStore((s) => s.lastWins.some((w) => w.patternId === 'rate-limit'))
   const isPlaying = useGameStore((s) => s.status === 'playing')
   const stage = useGameStore((s) => s.stage)
   const turnsLeft = useGameStore((s) => s.turnsLeft)
@@ -119,7 +120,14 @@ export function Hud() {
 
       {/* Payout only shows once the reels have visibly stopped, matching when
           `money` itself updates. The key restarts the pop animation per result. */}
-      {!isSpinning && (lastPayout > 0 || lastPerf > 0) && (
+      {!isSpinning && rateLimited && (
+        <div key={`limit-${stage}-${turnsLeft}`} className="hud-pop" style={calloutStyle('#ff5a4a', 40, '30%')}>
+          RATE LIMIT
+          <span style={{ display: 'block', fontSize: 16, letterSpacing: 2 }}>今回の獲得は全没収</span>
+        </div>
+      )}
+
+      {!isSpinning && !rateLimited && (lastPayout > 0 || lastPerf > 0) && (
         <div key={`${stage}-${turnsLeft}-${money}`} className="hud-pop" style={calloutStyle('#f1c40f', 48, '30%')}>
           +{lastPayout}
           {lastPerf > 0 && <span style={{ fontSize: 24, color: '#5dade2' }}>　+{lastPerf}P</span>}

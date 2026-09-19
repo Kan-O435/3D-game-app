@@ -4,7 +4,7 @@ import { Mesh, MeshBasicMaterial } from 'three'
 import { createPlaceholderIconTexture, SYMBOL_COUNT } from './icons'
 import { COLUMNS, ROWS } from '../game/layout'
 import { useGameStore } from '../store/gameStore'
-import { playReelStop, playWin } from '../audio/audioEngine'
+import { playRateLimit, playReelStop, playWin } from '../audio/audioEngine'
 
 const CELL_SIZE = 0.22
 const CELL_GAP = 0.04
@@ -41,6 +41,9 @@ export function ReelGrid({ position }: ReelGridProps) {
   const columnStoppedRef = useRef<boolean[]>(Array(COLUMNS).fill(true))
   const prevStoppedRef = useRef<boolean[]>(Array(COLUMNS).fill(true))
 
+  // A rate limit lights its cells red instead of pulsing them as a win.
+  const rateLimited = useMemo(() => lastWins.some((w) => w.patternId === 'rate-limit'), [lastWins])
+
   // Cells that belong to a completed winning line — only meaningful once
   // the spin has actually stopped, so this is empty while isSpinning.
   const winningCells = useMemo(() => {
@@ -67,6 +70,7 @@ export function ReelGrid({ position }: ReelGridProps) {
         if (!mesh) continue
         const material = mesh.material as MeshBasicMaterial
         material.map = textures[grid[i]]
+        material.color.set(rateLimited && winningCells.has(i) ? '#ff4b3a' : '#ffffff')
         material.needsUpdate = true
         mesh.scale.setScalar(
           winningCells.has(i) ? 1 + Math.sin(clock.elapsedTime * 6) * 0.08 : 1,
@@ -98,13 +102,15 @@ export function ReelGrid({ position }: ReelGridProps) {
           const rollIndex = Math.floor(elapsed / ROLL_FRAME_INTERVAL + col * 3 + row) % SYMBOL_COUNT
           material.map = textures[rollIndex]
         }
+        material.color.set('#ffffff')
         material.needsUpdate = true
         mesh.scale.setScalar(1)
       }
     }
 
     if (columnStoppedRef.current.every(Boolean)) {
-      if (lastWins.length > 0) playWin()
+      if (rateLimited) playRateLimit()
+      else if (lastWins.length > 0) playWin()
       finishSpin()
     }
   })

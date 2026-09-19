@@ -1,7 +1,9 @@
 // normal — pays on pattern runs like any symbol.
 // wild — substitutes for any normal symbol in a run (never for scatter).
 // scatter — never part of a run; pays by how many appear anywhere on the grid.
-export type SymbolKind = 'normal' | 'wild' | 'scatter'
+// curse — the "6": never part of a run; 3+ anywhere on the grid is a rate limit
+//   that wipes out the whole spin's take (see findRateLimit in paylines.ts).
+export type SymbolKind = 'normal' | 'wild' | 'scatter' | 'curse'
 
 export interface SymbolDef {
   id: number
@@ -36,9 +38,10 @@ export const SYMBOLS: readonly SymbolDef[] = [
   // Rare — weight 4
   { id: 10, kind: 'normal', weight: 4, payout: 40, perf: 1 },
   { id: 11, kind: 'normal', weight: 4, payout: 40, perf: 1 },
-  { id: 12, kind: 'normal', weight: 4, payout: 40, perf: 1 },
-  // Specials. The wild's payout applies to a run made only of wilds; the
+
+  // Specials. The curse has no payout of its own. The wild's payout applies to a run made only of wilds; the
   // scatter's payout is unused (see SCATTER_PAYOUT in paylines.ts).
+  { id: 12, kind: 'curse', weight: 8, payout: 0, perf: 0 },
   { id: 13, kind: 'scatter', weight: 9, payout: 0, perf: 0 },
   { id: 14, kind: 'wild', weight: 2, payout: 100, perf: 2 },
 ]
@@ -47,3 +50,4 @@ export const SYMBOL_COUNT = SYMBOLS.length
 
 export const WILD_ID = SYMBOLS.find((s) => s.kind === 'wild')!.id
 export const SCATTER_ID = SYMBOLS.find((s) => s.kind === 'scatter')!.id
+export const CURSE_ID = SYMBOLS.find((s) => s.kind === 'curse')!.id

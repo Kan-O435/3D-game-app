@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import {
   spin as drawGrid,
   findLineWins,
+  findRateLimit,
   BASE_PATTERN_IDS,
   computePayout,
   computePerformance,
@@ -142,7 +143,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     playSpinStart()
     const mods = resolveModifiers(charms)
     const grid = drawGrid(Math.random, mods.weightBoosts)
-    const lastWins = findLineWins(grid, [...BASE_PATTERN_IDS, ...mods.extraPatterns])
+    // Three or more curse symbols wipe the spin: the result is just the
+    // rate-limit marker (payout 0), so nothing else gets paid or highlighted.
+    const rateLimit = mods.rateLimitImmune ? null : findRateLimit(grid)
+    const lastWins = rateLimit
+      ? [rateLimit]
+      : findLineWins(grid, [...BASE_PATTERN_IDS, ...mods.extraPatterns])
     // The result is decided now, but stays hidden (see ReelGrid's roll
     // animation) until the reels visually stop and call finishSpin().
     // The turn and the fee are spent up front; the payout is only banked in
