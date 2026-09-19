@@ -8,6 +8,7 @@ svg all work; the number at the end of the file name is what counts
 ```
 src/assets/
 ├── icons/      slot symbol images, one per symbol      (00.png … 14.png)
+├── specials/   the three special symbols               (flame / star / wild .png)
 ├── posters/    the back-wall poster, one per stage     (01.png … 05.png)
 └── poster.png  optional: one general poster for any stage without its own
 ```
@@ -30,6 +31,14 @@ the picture is rendered at half resolution, so fine lines and small text get
 lost). A transparent background looks best; the game adds a dark tile and a thin
 coloured border around it (specials get a white frame).
 
+## Special symbols — `specials/`
+
+A separate folder for the three specials, so they don't get mixed in with the
+ordinary twelve. Name the files by what they are — `flame.png` (炎上, symbol 12),
+`star.png` (★ / ファンサ, 13), `wild.png` (W / 推し, 14) — or by number
+(`12.png`, `13.png`, `14.png`). Same image tips as above. (Putting `12.png` …
+`14.png` in `icons/` still works too, and wins if both exist.)
+
 ## Wall poster — `posters/NN.png` (one per stage)
 
 The poster on the wall behind the machine changes with the stage:
@@ -51,7 +60,7 @@ stage begins.
 
 - `icons/00.png` – `11.png`: 12 portrait photos for the 12 ordinary symbols
   (`10.png`/`11.png` are the two rare ones). The flame, ★ and W (`12`–`14`) still
-  use their built-in drawings until you add images for them.
+  use their built-in drawings until you add images for them in `specials/`.
 - `posters/no1.png`: the stage-1 poster (any name ending in the stage number works,
   so `no1.png` = stage 1). Stages 2–5 use the built-in poster until you add
   `no2.png` … or `02.png` …
