@@ -47,8 +47,8 @@ describe('screens', () => {
     expect(g()).toMatchObject({
       status: 'title',
       money: STARTING_MONEY,
-      due: 32,
-      perfNeeded: 7,
+      due: 34,
+      perfNeeded: 8,
       spinCost: 2,
       turnsLeft: TURNS_PER_STAGE,
     })
@@ -113,7 +113,7 @@ describe('spinning', () => {
 describe('the deadline', () => {
   it('pays the due, resets performance and opens the shop with the next order', () => {
     atDeadline({ money: 50, perf: 5 })
-    expect(g()).toMatchObject({ status: 'shop', stage: 2, money: 22, perf: 0, lastPaid: 28, due: 50, perfNeeded: 8 })
+    expect(g()).toMatchObject({ status: 'shop', stage: 2, money: 22, perf: 0, lastPaid: 28, due: 57, perfNeeded: 9 })
     expect(g().shopOffer).toHaveLength(SHOP_SLOTS)
   })
 
