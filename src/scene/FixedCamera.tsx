@@ -13,7 +13,7 @@ interface Pose {
 // The three places the camera stands. The machine is home; the order sheet is
 // pinned on the left wall and the exchange counter sits on the right.
 const STATIONS = {
-  machine: { position: new Vector3(0.45, 1.3, 3.5), lookAt: new Vector3(0.45, 1.08, 0) },
+  machine: { position: new Vector3(0, 1.3, 3.5), lookAt: new Vector3(0, 1.08, 0) },
   order: { position: new Vector3(-1.3, 1.55, 1.0), lookAt: new Vector3(-3.3, 1.65, 0.3) },
   shop: { position: new Vector3(1.4, 1.5, 0.3), lookAt: new Vector3(3.3, 1.2, -0.5) },
 } satisfies Record<string, Pose>
@@ -67,5 +67,5 @@ export function FixedCamera() {
     camera.lookAt(look.current)
   })
 
-  return <PerspectiveCamera makeDefault position={[0.45, 1.3, 3.5]} fov={50} />
+  return <PerspectiveCamera makeDefault position={[0, 1.3, 3.5]} fov={50} />
 }
