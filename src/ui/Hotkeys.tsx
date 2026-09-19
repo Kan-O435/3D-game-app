@@ -1,6 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { pressPush } from '../store/actions'
+
+const HOLD_TO_SKIP_MS = 400
 
 // Keyboard: Space/Enter is the "do the obvious thing" key for the current
 // screen (start, accept the order, pull the lever, retry); in play Enter pays
@@ -8,10 +10,27 @@ import { pressPush } from '../store/actions'
 // The shop deliberately has no Space action so it can't skip the counter by
 // accident.
 export function Hotkeys() {
+  // When Space went down, so a long press can be told from a tap.
+  const spaceDownAt = useRef(0)
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.repeat) return
       const s = useGameStore.getState()
+
+      // While the reels spin: tap Space to stop the next reel, hold it to skip
+      // the rest of the animation. (Holding the key that started the spin
+      // counts too — a long press from the start skips straight to the result.)
+      if (e.code === 'Space') {
+        if (!e.repeat) spaceDownAt.current = performance.now()
+        if (s.isSpinning) {
+          e.preventDefault()
+          if (e.repeat) {
+            if (performance.now() - spaceDownAt.current > HOLD_TO_SKIP_MS) s.requestReelSkip()
+          } else s.requestReelStop()
+          return
+        }
+      }
+      if (e.repeat) return
 
       if (e.code === 'Space' || e.code === 'Enter') {
         e.preventDefault()

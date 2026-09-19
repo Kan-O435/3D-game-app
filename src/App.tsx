@@ -5,6 +5,7 @@ import { CharmList } from './ui/CharmList'
 import { Callouts } from './ui/Callouts'
 import { Radio } from './ui/Radio'
 import { PayPrompt } from './ui/PayPrompt'
+import { SpinHint } from './ui/SpinHint'
 import { GameOverScreen } from './ui/GameOverScreen'
 import { Shop } from './ui/Shop'
 import { OrderSheet } from './ui/OrderSheet'
@@ -19,12 +20,19 @@ const PIXEL_SIZE = 2
 export default function App() {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <Canvas dpr={1 / PIXEL_SIZE}>
+      <Canvas
+        dpr={1 / PIXEL_SIZE}
+        onCreated={({ gl }) => {
+          // The rolling reel strips are clipped to the reel window.
+          gl.localClippingEnabled = true
+        }}
+      >
         <Scene />
       </Canvas>
       <CharmList />
       <Callouts />
       <PayPrompt />
+      <SpinHint />
       <Radio />
       <PayoutTable />
       <MuteButton />

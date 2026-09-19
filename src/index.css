@@ -218,3 +218,18 @@ canvas {
 /* The early-pay button waves a little so it's noticed. */
 .pay-prompt { animation: pay-bob 1.2s ease-in-out infinite; }
 @keyframes pay-bob { 50% { transform: translateY(-4px); } }
+
+/* Hint shown while the reels spin (src/ui/SpinHint.tsx). */
+.spin-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 62px;
+  transform: translateX(-50%);
+  padding: 4px 16px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #6b5233;
+  color: #e8dcc0;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
