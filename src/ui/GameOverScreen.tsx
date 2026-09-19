@@ -28,16 +28,16 @@ export function GameOverScreen() {
       }}
     >
       <div className="neon" style={{ fontSize: 60, fontWeight: 900, letterSpacing: '0.15em', color: 'var(--led-red)', textShadow: '0 0 14px var(--led-red), 0 0 34px var(--cab-red)' }}>
-        推し活、終了
+        GAME OVER
       </div>
       <div style={{ fontSize: 20 }}>
-        STAGE {stage}: {failReason === 'perf' ? '熱量が足りなくて、推しに会えなかった' : 'チケット代が足りなくて、推しに会えなかった'}
+        STAGE {stage}: {failReason === 'perf' ? '性能値が足りなかった' : '納付額が足りなかった'}
       </div>
       <div style={{ fontSize: 16, color: '#999' }}>
-        手持ち {money} / チケット代 {due}　·　熱量 {perf} / {perfNeeded} P
+        COINS {money} / 納付 {due}　·　PERF {perf} / {perfNeeded} P
       </div>
       <button className="arcade-btn" onClick={restart} style={{ marginTop: 16 }}>
-        もう一度、推す
+        RETRY
       </button>
     </div>
   )

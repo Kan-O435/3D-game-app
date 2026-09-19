@@ -40,13 +40,13 @@ export function Shop() {
       }}
     >
       <div className="neon" style={{ fontSize: 30, fontWeight: 800, letterSpacing: '0.2em', color: 'var(--led-green)', textShadow: '0 0 12px var(--led-green)' }}>
-        物販ブース ─ チケット代 −{lastPaid}
+        納付完了 −{lastPaid}
       </div>
       <div className="slot-panel led-window" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '6px 16px' }}>
-        <span className="led-label">手持ち</span>
+        <span className="led-label">COINS</span>
         <LedNumber value={money} digits={5} size={30} />
         <span style={{ fontSize: 12, color: '#b8a685' }}>
-          次のライブ STAGE {stage}：チケット代 {due} ・ 熱量 {perfNeeded}P ・ スピン費 {spinCost}
+          STAGE {stage}：納付 {due} ・ {perfNeeded}P ・ スピン費 {spinCost}
         </span>
       </div>
 
@@ -95,16 +95,16 @@ export function Shop() {
             </button>
           )
         })}
-        {offer.length === 0 && <div style={{ color: '#999' }}>売り切れ — 品替えで入れ替えよう</div>}
+        {offer.length === 0 && <div style={{ color: '#999' }}>品切れ — 品替えで入れ替えよう</div>}
       </div>
 
       <div style={{ fontSize: 12, color: '#888' }}>※ スピン費（{spinCost}）を下回る買い物はできない</div>
       <div style={{ display: 'flex', gap: 14, marginTop: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
         <button className="arcade-btn gray" onClick={rerollShop} disabled={!canSpend({ money, spinCost }, REROLL_COST)}>
-          品替え<small>−{REROLL_COST} コイン</small>
+          品替え<small>−{REROLL_COST} COINS</small>
         </button>
         <button className="arcade-btn" onClick={leaveShop}>
-          次のライブへ
+          次のステージへ
         </button>
       </div>
     </div>
