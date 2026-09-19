@@ -1,13 +1,13 @@
 import { useGameStore } from '../store/gameStore'
 import { initAudio } from '../audio/audioEngine'
 
-// Minimal stand-in so Phase 5's animation has something to trigger it.
-// Phase 8 builds this out into the real HUD (money/quota/turns around it).
+// The PUSH button. Hidden on game over — GameOverScreen owns the RETRY button.
 export function SpinButton() {
   const spin = useGameStore((s) => s.spin)
-  const restart = useGameStore((s) => s.restart)
   const isSpinning = useGameStore((s) => s.isSpinning)
   const isGameOver = useGameStore((s) => s.status === 'gameOver')
+
+  if (isGameOver) return null
 
   return (
     <button
@@ -16,8 +16,7 @@ export function SpinButton() {
         // gesture — this is the first guaranteed one, so start/resume it
         // here rather than trying to play BGM on mount.
         initAudio()
-        if (isGameOver) restart()
-        else spin()
+        spin()
       }}
       disabled={isSpinning}
       style={{
@@ -36,7 +35,7 @@ export function SpinButton() {
         cursor: isSpinning ? 'default' : 'pointer',
       }}
     >
-      {isSpinning ? 'SPINNING...' : isGameOver ? 'RETRY' : 'PUSH'}
+      {isSpinning ? 'SPINNING...' : 'PUSH'}
     </button>
   )
 }
