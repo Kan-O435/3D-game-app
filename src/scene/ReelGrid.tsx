@@ -16,12 +16,12 @@ import { playRateLimit, playReelStop, playWin } from '../audio/audioEngine'
 // or skip the whole animation (hold Space) — see store `requestReelStop/Skip`.
 // The real result was decided when the spin started; the strips are decoration
 // and the final symbols only appear as each column lands. Values are feel.
-const BASE_SPIN_DURATION = 0.8 // seconds until the first reel stops on its own
-const COLUMN_STAGGER = 0.3 // extra seconds per column after that
-const SCROLL_SPEED = 11 // cells per second
+const BASE_SPIN_DURATION = 0.4 // seconds until the first reel stops on its own
+const COLUMN_STAGGER = 0.16 // extra seconds per column after that
+const SCROLL_SPEED = 14 // cells per second
 const GHOST_OFFSET = STEP * 0.55 // how far the streak trails behind
 const GHOST_OPACITY = 0.3
-const SETTLE_SECONDS = 0.28 // the little drop-and-bounce when a reel lands
+const SETTLE_SECONDS = 0.22 // the little drop-and-bounce when a reel lands
 const STRIP_ROWS = ROWS + 2 // one cell above and below the window
 const SEQUENCE_LENGTH = 41 // random symbols per column, cycled
 
