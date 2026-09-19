@@ -1,4 +1,5 @@
 import { useGameStore } from '../store/gameStore'
+import { initAudio } from '../audio/audioEngine'
 
 // Minimal stand-in so Phase 5's animation has something to trigger it.
 // Phase 8 builds this out into the real HUD (money/quota/turns around it).
@@ -8,7 +9,13 @@ export function SpinButton() {
 
   return (
     <button
-      onClick={spin}
+      onClick={() => {
+        // Browser autoplay policy requires audio to start from a user
+        // gesture — this is the first guaranteed one, so start/resume it
+        // here rather than trying to play BGM on mount.
+        initAudio()
+        spin()
+      }}
       disabled={isSpinning}
       style={{
         position: 'absolute',

@@ -8,6 +8,7 @@ import {
   type Grid,
   type LineWin,
 } from '../game'
+import { playSpinStart } from '../audio/audioEngine'
 
 interface GameState {
   grid: Grid
@@ -30,6 +31,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   lastPayout: 0,
   spin: () => {
     if (get().isSpinning) return
+    playSpinStart()
     const grid = drawGrid()
     const lastWins = findLineWins(grid)
     // The result is decided now, but stays hidden (see ReelGrid's roll

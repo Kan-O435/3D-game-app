@@ -4,6 +4,7 @@ import { Mesh, MeshBasicMaterial } from 'three'
 import { createPlaceholderIconTexture, SYMBOL_COUNT } from './icons'
 import { COLUMNS, ROWS } from '../game/layout'
 import { useGameStore } from '../store/gameStore'
+import { playReelStop, playWin } from '../audio/audioEngine'
 
 const CELL_SIZE = 0.22
 const CELL_GAP = 0.04
@@ -38,6 +39,7 @@ export function ReelGrid({ position }: ReelGridProps) {
   const wasSpinningRef = useRef(false)
   const spinStartRef = useRef(0)
   const columnStoppedRef = useRef<boolean[]>(Array(COLUMNS).fill(true))
+  const prevStoppedRef = useRef<boolean[]>(Array(COLUMNS).fill(true))
 
   // Cells that belong to a completed winning line — only meaningful once
   // the spin has actually stopped, so this is empty while isSpinning.
@@ -57,6 +59,7 @@ export function ReelGrid({ position }: ReelGridProps) {
     if (isSpinning && !wasSpinningRef.current) {
       spinStartRef.current = clock.elapsedTime
       columnStoppedRef.current = Array(COLUMNS).fill(false)
+      prevStoppedRef.current = Array(COLUMNS).fill(false)
     }
     wasSpinningRef.current = isSpinning
 
@@ -78,6 +81,10 @@ export function ReelGrid({ position }: ReelGridProps) {
 
     for (let col = 0; col < COLUMNS; col++) {
       const stopped = elapsed >= BASE_SPIN_DURATION + col * COLUMN_STAGGER
+      if (stopped && !prevStoppedRef.current[col]) {
+        playReelStop()
+      }
+      prevStoppedRef.current[col] = stopped
       columnStoppedRef.current[col] = stopped
 
       for (let row = 0; row < ROWS; row++) {
@@ -99,6 +106,7 @@ export function ReelGrid({ position }: ReelGridProps) {
     }
 
     if (columnStoppedRef.current.every(Boolean)) {
+      if (lastWins.length > 0) playWin()
       finishSpin()
     }
   })
