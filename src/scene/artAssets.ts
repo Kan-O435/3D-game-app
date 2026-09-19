@@ -1,5 +1,5 @@
 // Optional artwork dropped into src/assets: one image per slot symbol, plus the
-// wall poster. Anything missing falls back to the procedural placeholder, so the
+// wall poster (one per stage, or a single general one). Anything missing falls back to the procedural placeholder, so the
 // game always renders. See src/assets/README.md for the file names.
 
 const iconModules = import.meta.glob('../assets/icons/*.{png,jpg,jpeg,webp,gif,svg}', {
@@ -9,6 +9,12 @@ const iconModules = import.meta.glob('../assets/icons/*.{png,jpg,jpeg,webp,gif,s
 }) as Record<string, string>
 
 const posterModules = import.meta.glob('../assets/poster.{png,jpg,jpeg,webp,gif,svg}', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+}) as Record<string, string>
+
+const stagePosterModules = import.meta.glob('../assets/posters/*.{png,jpg,jpeg,webp,gif,svg}', {
   eager: true,
   query: '?url',
   import: 'default',
@@ -36,8 +42,26 @@ export function iconUrl(symbolId: number): string | undefined {
   return ICON_URLS.get(symbolId)
 }
 
-/** URL of the wall poster image, if one was supplied. */
+/** URL of the general wall poster (src/assets/poster.*), used for any stage without its own. */
 export const POSTER_URL: string | undefined = Object.values(posterModules)[0]
+
+const STAGE_POSTER_URLS = indexIcons(stagePosterModules)
+
+/**
+ * Which poster to show: the stage's own image (src/assets/posters/NN.* with NN =
+ * stage number), else the general poster, else undefined (built-in poster).
+ */
+export function pickPosterUrl(
+  byStage: ReadonlyMap<number, string>,
+  general: string | undefined,
+  stage: number,
+): string | undefined {
+  return byStage.get(stage) ?? general
+}
+
+export function posterUrlForStage(stage: number): string | undefined {
+  return pickPosterUrl(STAGE_POSTER_URLS, POSTER_URL, stage)
+}
 
 export function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {

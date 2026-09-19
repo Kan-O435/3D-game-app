@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { drawFitted, parseIconId } from './artAssets'
+import { drawFitted, parseIconId, pickPosterUrl } from './artAssets'
 
 describe('parseIconId', () => {
   it('reads the trailing number of the file name', () => {
@@ -28,5 +28,23 @@ describe('drawFitted', () => {
     const ctx = fakeCtx()
     drawFitted(ctx as unknown as CanvasRenderingContext2D, { width: 200, height: 100 } as never, { x: 0, y: 0, w: 100, h: 100 }, 'cover')
     expect(ctx.drawImage).toHaveBeenCalledWith(expect.anything(), -50, 0, 200, 100)
+  })
+})
+
+describe('pickPosterUrl', () => {
+  const byStage = new Map([
+    [1, 'stage1.png'],
+    [3, 'stage3.png'],
+  ])
+
+  it('prefers the stage\'s own poster', () => {
+    expect(pickPosterUrl(byStage, 'general.png', 1)).toBe('stage1.png')
+    expect(pickPosterUrl(byStage, undefined, 3)).toBe('stage3.png')
+  })
+
+  it('falls back to the general poster, then to nothing (the built-in one)', () => {
+    expect(pickPosterUrl(byStage, 'general.png', 2)).toBe('general.png')
+    expect(pickPosterUrl(byStage, undefined, 2)).toBeUndefined()
+    expect(pickPosterUrl(new Map(), undefined, 1)).toBeUndefined()
   })
 })

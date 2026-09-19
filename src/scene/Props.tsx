@@ -1,9 +1,10 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { AdditiveBlending, DoubleSide } from 'three'
 import { glowCanvas, noiseCanvas, toTexture, windowCanvas } from './canvasTextures'
 import { exchangeSignCanvas, idolPosterCanvas, monitorCanvas, noteCanvas, plateCanvas, rulesCanvas, slipsBoardCanvas, workOrderCanvas } from './propCanvases'
 import { AimedSpot } from './AimedSpot'
-import { POSTER_URL, drawFitted, loadImage } from './artAssets'
+import { drawFitted, loadImage, posterUrlForStage } from './artAssets'
+import { useGameStore } from '../store/gameStore'
 import { ROOM } from './roomLayout'
 
 const BACK = ROOM.minZ // z of the back wall
@@ -25,7 +26,6 @@ export function Props() {
       notes: [61, 62, 63].map((seed) => toTexture(noteCanvas(seed))),
       board: toTexture(slipsBoardCanvas()),
       sign: toTexture(exchangeSignCanvas()),
-      idol: makePosterTexture(),
       monitor: toTexture(monitorCanvas()),
       reroll: toTexture(plateCanvas('REROLL', '#8a2a20', '#f4e1d8')),
       next: toTexture(plateCanvas('NEXT', '#3a3a3a', '#e6e0d0')),
@@ -53,10 +53,7 @@ export function Props() {
       <AimedSpot position={[WINDOW_X, 2.2, BACK + 0.15]} aim={[WINDOW_X - 0.75, 0, 0.6]} angle={0.7} penumbra={0.9} intensity={22} distance={6} color="#4d8be0" />
 
       {/* ---- the idol poster on the back wall, lit pink ---- */}
-      <mesh position={[-1.85, 1.75, BACK + 0.012]}>
-        <planeGeometry args={[0.72, 1.02]} />
-        <meshBasicMaterial map={paperTextures.idol} toneMapped={false} />
-      </mesh>
+      <BackPoster />
       <pointLight position={[-1.85, 1.8, BACK + 0.6]} color="#ff7ab8" intensity={2.2} distance={3} />
 
       {/* ---- bucket (with a puddle) ---- */}
@@ -159,9 +156,23 @@ export function Props() {
 const POSTER_W = 176
 const POSTER_H = 248 // same 0.72 x 1.02 proportions as the poster plane
 
-// The back-wall poster: the built-in one until a supplied image (src/assets/
-// poster.*) has loaded, then that image, cropped to fill the frame.
-function makePosterTexture() {
+// The poster on the back wall. It follows the stage: the stage's own image
+// (src/assets/posters/NN.*), else the general poster.*, else the built-in one.
+function BackPoster() {
+  const stage = useGameStore((s) => s.stage)
+  const texture = useMemo(() => makePosterTexture(posterUrlForStage(stage)), [stage])
+  useEffect(() => () => texture.dispose(), [texture])
+  return (
+    <mesh position={[-1.85, 1.75, BACK + 0.012]}>
+      <planeGeometry args={[0.72, 1.02]} />
+      <meshBasicMaterial map={texture} toneMapped={false} />
+    </mesh>
+  )
+}
+
+// The built-in poster until the supplied image has loaded, then that image,
+// cropped to fill the frame.
+function makePosterTexture(url: string | undefined) {
   const canvas = document.createElement('canvas')
   canvas.width = POSTER_W
   canvas.height = POSTER_H
@@ -169,8 +180,8 @@ function makePosterTexture() {
   ctx.imageSmoothingEnabled = false
   ctx.drawImage(idolPosterCanvas(), 0, 0, POSTER_W, POSTER_H)
   const texture = toTexture(canvas)
-  if (POSTER_URL) {
-    loadImage(POSTER_URL)
+  if (url) {
+    loadImage(url)
       .then((image) => {
         ctx.imageSmoothingEnabled = true
         drawFitted(ctx, image, { x: 0, y: 0, w: POSTER_W, h: POSTER_H }, 'cover')
