@@ -1,0 +1,213 @@
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { useGameStore } from '../store/gameStore'
+import { PIXEL_FONT, makeCanvas, toTexture } from './canvasTextures'
+import { easeValue } from '../ui/countUp'
+
+// The machine's lit-up signs and displays. Each is a plane with a low-res canvas
+// texture that gets redrawn when the numbers it shows change (the canvases are
+// tiny and sampled with nearest-neighbour, so it reads as pixel art).
+
+export const MACHINE_TITLE = 'LUCKY CLOVER' // placeholder product name (docs/NOTES.md)
+
+type Draw = (ctx: CanvasRenderingContext2D, w: number, h: number) => void
+
+type Screen2D = { ctx: CanvasRenderingContext2D; texture: ReturnType<typeof toTexture> }
+
+function redraw(screen: Screen2D, draw: Draw, width: number, height: number) {
+  draw(screen.ctx, width, height)
+  screen.texture.needsUpdate = true
+}
+
+/** Advance a scrolling texture (kept out of the component so it isn't a hook mutation). */
+function scrollTexture(texture: Screen2D['texture'], seconds: number, speed: number) {
+  texture.offset.x = (seconds * speed) % 1
+}
+
+/** A canvas texture that redraws whenever `draw` changes (wrap it in useCallback). */
+function useScreen(width: number, height: number, draw: Draw, scrolls = false) {
+  const screen = useMemo(() => {
+    const { canvas, ctx } = makeCanvas(width, height)
+    // A scrolling screen needs wrap-around sampling so its offset can loop.
+    return { ctx, texture: toTexture(canvas, scrolls ? { repeat: [0.5, 1] } : {}) }
+  }, [width, height, scrolls])
+  useEffect(() => redraw(screen, draw, width, height), [screen, draw, width, height])
+  return screen.texture
+}
+
+function glowText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, size: number, color: string, align: CanvasTextAlign = 'center') {
+  ctx.font = `bold ${size}px ${PIXEL_FONT}`
+  ctx.textAlign = align
+  ctx.textBaseline = 'middle'
+  ctx.shadowColor = color
+  ctx.shadowBlur = 4
+  ctx.fillStyle = color
+  ctx.fillText(text, x, y)
+  ctx.shadowBlur = 0
+}
+
+function Screen({ width, height, position, texture, children }: { width: number; height: number; position: [number, number, number]; texture: ReturnType<typeof toTexture>; children?: ReactNode }) {
+  return (
+    <mesh position={position}>
+      <planeGeometry args={[width, height]} />
+      <meshBasicMaterial map={texture} toneMapped={false} />
+      {children}
+    </mesh>
+  )
+}
+
+/** A number that rolls to its new value (used for the coin readout). */
+function useRollingNumber(target: number, durationMs = 500): number {
+  const [shown, setShown] = useState(target)
+  const current = useRef(target)
+  useEffect(() => {
+    const from = current.current
+    if (from === target) return
+    const start = performance.now()
+    let frame = 0
+    const tick = (now: number) => {
+      const next = easeValue(from, target, (now - start) / durationMs)
+      current.current = next
+      setShown(next)
+      if (next !== target) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [target, durationMs])
+  return shown
+}
+
+/** The lit sign on top of the machine. */
+export function MarqueeSign({ position }: { position: [number, number, number] }) {
+  const draw = useCallback<Draw>((ctx, w, h) => {
+    ctx.fillStyle = '#1c1304'
+    ctx.fillRect(0, 0, w, h)
+    ctx.strokeStyle = '#7a5a10'
+    ctx.lineWidth = 2
+    ctx.strokeRect(3, 3, w - 6, h - 6)
+    glowText(ctx, MACHINE_TITLE, w / 2, h / 2 + 1, 15, '#ffd84a')
+  }, [])
+  return <Screen width={1.2} height={0.22} position={position} texture={useScreen(160, 30, draw)} />
+}
+
+/** "STAGE n" plate above the reels. */
+export function StagePlate({ position }: { position: [number, number, number] }) {
+  const stage = useGameStore((s) => s.stage)
+  const draw = useCallback<Draw>(
+    (ctx, w, h) => {
+      ctx.fillStyle = '#1b1613'
+      ctx.fillRect(0, 0, w, h)
+      ctx.strokeStyle = '#6b5a44'
+      ctx.strokeRect(0.5, 0.5, w - 1, h - 1)
+      glowText(ctx, `STAGE ${stage}`, w / 2, h / 2 + 1, 15, '#e8dcc0')
+    },
+    [stage],
+  )
+  return <Screen width={0.5} height={0.1} position={position} texture={useScreen(96, 20, draw)} />
+}
+
+/** The paper slip with the spin fee. */
+export function FeePlate({ position }: { position: [number, number, number] }) {
+  const spinCost = useGameStore((s) => s.spinCost)
+  const draw = useCallback<Draw>(
+    (ctx, w, h) => {
+      ctx.fillStyle = '#1b1613'
+      ctx.fillRect(0, 0, w, h)
+      ctx.strokeStyle = '#a07a1c'
+      ctx.strokeRect(0.5, 0.5, w - 1, h - 1)
+      glowText(ctx, `FEE ${spinCost}`, w / 2, h / 2 + 1, 15, '#ffd84a')
+    },
+    [spinCost],
+  )
+  return <Screen width={0.46} height={0.1} position={position} texture={useScreen(96, 20, draw)} />
+}
+
+/** The engraved plate under the reels. */
+export function TerminalPlate({ position }: { position: [number, number, number] }) {
+  const draw = useCallback<Draw>((ctx, w, h) => {
+    ctx.fillStyle = '#4a3a22'
+    ctx.fillRect(0, 0, w, h)
+    ctx.strokeStyle = '#9a7c3e'
+    ctx.strokeRect(0.5, 0.5, w - 1, h - 1)
+    glowText(ctx, 'TERMINAL', w / 2, h / 2 + 1, 13, '#e6c987')
+  }, [])
+  return <Screen width={0.6} height={0.1} position={position} texture={useScreen(96, 16, draw)} />
+}
+
+/**
+ * The display in the PUSH panel. On the title screen it just says PUSH; while
+ * playing it becomes three readouts: coins (with what's due), performance, and
+ * turns left before the deadline.
+ */
+export function DisplayStrip({ position }: { position: [number, number, number] }) {
+  const status = useGameStore((s) => s.status)
+  const isSpinning = useGameStore((s) => s.isSpinning)
+  const moneyNow = useGameStore((s) => s.money)
+  const money = useRollingNumber(moneyNow)
+  const due = useGameStore((s) => s.due)
+  const perfNow = useGameStore((s) => s.perf)
+  const perf = useRollingNumber(perfNow)
+  const perfNeeded = useGameStore((s) => s.perfNeeded)
+  const turnsLeft = useGameStore((s) => s.turnsLeft)
+  const spinCost = useGameStore((s) => s.spinCost)
+
+  const draw = useCallback<Draw>(
+    (ctx, w, h) => {
+      ctx.fillStyle = '#050403'
+      ctx.fillRect(0, 0, w, h)
+
+      if (status === 'title') {
+        glowText(ctx, 'PUSH', w / 2, h / 2 + 1, 38, '#e9e2c8')
+        return
+      }
+      if (status !== 'playing') {
+        glowText(ctx, '----', w / 2, h / 2, 30, '#3b3226')
+        return
+      }
+
+      // Three cells, each a small label over a big value. The coin cell's label is
+      // what's due, so coins-vs-debt reads at a glance.
+      const cell = w / 3
+      const columns = [
+        { label: `DUE ${due}`, value: String(money), color: money >= due ? '#6dff9a' : money < spinCost ? '#ff6a5a' : '#ffb84a' },
+        { label: 'PERF', value: `${perf}/${perfNeeded}`, color: perf >= perfNeeded ? '#6dff9a' : '#6cc4ff' },
+        { label: 'TURNS', value: isSpinning ? '..' : String(turnsLeft), color: turnsLeft <= 2 ? '#ff6a5a' : '#ffb84a' },
+      ]
+      columns.forEach((c, i) => {
+        const cx = cell * i + cell / 2
+        glowText(ctx, c.label, cx, 11, 13, '#a8956f')
+        glowText(ctx, c.value, cx, h - 20, 30, c.color)
+        if (i > 0) {
+          ctx.fillStyle = '#2a2016'
+          ctx.fillRect(cell * i, 5, 1, h - 10)
+        }
+      })
+    },
+    [status, isSpinning, money, due, perf, perfNeeded, turnsLeft, spinCost],
+  )
+  return <Screen width={1.0} height={0.27} position={position} texture={useScreen(224, 60, draw)} />
+}
+
+/** The scrolling strip along the base of the machine. */
+export function Ticker({ position }: { position: [number, number, number] }) {
+  const stage = useGameStore((s) => s.stage)
+  const due = useGameStore((s) => s.due)
+  const turnsLeft = useGameStore((s) => s.turnsLeft)
+  const draw = useCallback<Draw>(
+    (ctx, w, h) => {
+      ctx.fillStyle = '#0a0706'
+      ctx.fillRect(0, 0, w, h)
+      // The phrase is drawn twice, half a canvas apart, so the canvas is exactly
+      // two periods — scrolling the texture offset then loops without a seam.
+      const phrase = `◆ STAGE ${stage} ◆ DUE ${due} ◆ ${turnsLeft} LEFT ◆ 炎上マーク混入中 ◆`
+      glowText(ctx, phrase, w / 4, h / 2 + 1, 13, '#ffb84a')
+      glowText(ctx, phrase, (w * 3) / 4, h / 2 + 1, 13, '#ffb84a')
+    },
+    [stage, due, turnsLeft],
+  )
+  const texture = useScreen(1024, 20, draw, true)
+  useFrame(({ clock }) => {
+    scrollTexture(texture, clock.elapsedTime, 0.03)
+  })
+  return <Screen width={1.6} height={0.1} position={position} texture={texture} />
+}
