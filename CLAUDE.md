@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A browser-playable homage to *CloverPit* (Steam, Unity, Panik Arcade) — a first-person slot-machine horror roguelite: spin a slot machine, pay a growing debt at each deadline (a fixed number of spins) or lose. This reimplements the game-loop concept in the browser via three.js/React Three Fiber; no assets or code are ported from the original.
 
-**Current fiction (user's choice):** you're a fan (ヲタク) working to fund your idol (推し) — stages are ever-bigger events, items are fan goods, the wild is your idol, the rate-limit symbol is 炎上. Text lives in `src/game/story.ts`, `src/game/charms.ts` and the `src/ui/*` screens; see `docs/NOTES.md` for the full mapping.
+**Current fiction (user's choice), told deadpan:** the UI is plain office paperwork (業務命令書, 納付額, 性能値…) but the *content* is a fan funding their idol (推し) — stages are ever-bigger events (地下ライブ → 武道館 → ドーム), items are fan goods, the wild is 推し, the rate-limit symbol is 炎上. The joke is that nothing announces it. Text lives in `src/game/story.ts`, `src/game/charms.ts` and the `src/ui/*` screens; see `docs/NOTES.md` for the mapping and what was deliberately kept plain.
 
 Client-side only, intentionally — no backend/DB.
 
