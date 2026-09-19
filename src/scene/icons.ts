@@ -148,7 +148,11 @@ export function symbolColor(symbolIndex: number): string {
 
 // The tile is drawn at 2x the glyph grid so supplied images have some detail.
 const SIZE = TILE * 2
-const IMAGE_MARGIN = 5 // px of tile background left around a supplied image
+// A supplied picture fills the tile (cropped square, magnified a little and biased
+// toward the top, where a portrait's face is) with a hair of margin so the
+// coloured border still shows.
+const IMAGE_MARGIN = 3
+const IMAGE_FOCUS = { x: 0.5, y: 0.22, zoom: 1.35 }
 
 export function createPlaceholderIconTexture(symbolIndex: number): CanvasTexture {
   const { canvas, ctx } = makeCanvas(SIZE, SIZE)
@@ -179,15 +183,17 @@ export function createPlaceholderIconTexture(symbolIndex: number): CanvasTexture
   glyph.draw(ctx, glyph.color)
   drawBorder()
 
-  const texture = toTexture(canvas)
-
-  // …then swap in the supplied image once it has loaded, if there is one.
+  // Swap in the supplied image once it has loaded, if there is one. A photo wants
+  // smooth filtering (the glyphs stay crisp pixel art).
   const url = iconUrl(symbolIndex)
+  const texture = toTexture(canvas, { smooth: Boolean(url) })
   if (url) {
     loadImage(url)
       .then((image) => {
         drawTileBase()
-        drawFitted(ctx, image, { x: IMAGE_MARGIN, y: IMAGE_MARGIN, w: SIZE - IMAGE_MARGIN * 2, h: SIZE - IMAGE_MARGIN * 2 }, 'contain')
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = 'high'
+        drawFitted(ctx, image, { x: IMAGE_MARGIN, y: IMAGE_MARGIN, w: SIZE - IMAGE_MARGIN * 2, h: SIZE - IMAGE_MARGIN * 2 }, 'cover', IMAGE_FOCUS)
         drawBorder()
         texture.needsUpdate = true
       })

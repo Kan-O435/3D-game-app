@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { payoutTable } from '../game'
 import { useGameStore } from '../store/gameStore'
 import { symbolColor } from '../scene/icons'
+import { iconUrl } from '../scene/artAssets'
 
 const LENGTHS = [2, 3, 4, 5]
 
@@ -49,7 +50,17 @@ export function PayoutTable() {
                   row.symbolIds.map((id) => (
                     <span
                       key={id}
-                      style={{ display: 'inline-block', width: 10, height: 10, marginRight: 2, background: symbolColor(id), border: '1px solid rgba(255,255,255,0.35)', borderRadius: 2 }}
+                      style={{
+                        display: 'inline-block',
+                        width: 14,
+                        height: 14,
+                        marginRight: 2,
+                        verticalAlign: 'middle',
+                        border: '1px solid rgba(255,255,255,0.35)',
+                        borderRadius: 2,
+                        // the symbol's picture if it has one, else its colour
+                        background: iconUrl(id) ? `center 25% / cover url(${iconUrl(id)})` : symbolColor(id),
+                      }}
                     />
                   ))}
                 {row.kind === 'normal' && row.factor !== 1 && (

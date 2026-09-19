@@ -72,20 +72,32 @@ export function loadImage(url: string): Promise<HTMLImageElement> {
   })
 }
 
-/** Draw `image` into a (dx, dy, dw, dh) box: 'contain' fits it whole, 'cover' fills and crops. */
+/**
+ * Draw `image` into a box: 'contain' fits it whole, 'cover' fills the box and
+ * crops the overflow. `focus` (0..1, default centre) says which part of the
+ * cropped axis to keep — e.g. `{ y: 0.3 }` keeps more of the top of a portrait,
+ * where the face is. `zoom` (>= 1, 'cover' only) magnifies past the fit so the
+ * subject fills more of the box.
+ */
 export function drawFitted(
   ctx: CanvasRenderingContext2D,
   image: CanvasImageSource & { width: number; height: number },
   box: { x: number; y: number; w: number; h: number },
   mode: 'contain' | 'cover',
+  focus: { x?: number; y?: number; zoom?: number } = {},
 ) {
-  const scale = (mode === 'contain' ? Math.min : Math.max)(box.w / image.width, box.h / image.height)
+  const zoom = mode === 'cover' ? Math.max(1, focus.zoom ?? 1) : 1
+  const scale = (mode === 'contain' ? Math.min : Math.max)(box.w / image.width, box.h / image.height) * zoom
   const w = image.width * scale
   const h = image.height * scale
   ctx.save()
   ctx.beginPath()
   ctx.rect(box.x, box.y, box.w, box.h)
   ctx.clip()
-  ctx.drawImage(image, box.x + (box.w - w) / 2, box.y + (box.h - h) / 2, w, h)
+  // For 'cover' the overflow (w - box.w, h - box.h) is what gets cropped; `focus`
+  // picks how it's split (0.5 = evenly). For 'contain' the leftover is padding.
+  const fx = focus.x ?? 0.5
+  const fy = focus.y ?? 0.5
+  ctx.drawImage(image, box.x + (box.w - w) * fx, box.y + (box.h - h) * fy, w, h)
   ctx.restore()
 }

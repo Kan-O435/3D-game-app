@@ -54,7 +54,7 @@ export function Props() {
 
       {/* ---- the idol poster on the back wall, lit pink ---- */}
       <BackPoster />
-      <pointLight position={[-1.85, 1.8, BACK + 0.6]} color="#ff7ab8" intensity={2.2} distance={3} />
+      <pointLight position={[-1.95, 1.8, BACK + 0.6]} color="#ffd866" intensity={2.2} distance={3} />
 
       {/* ---- bucket (with a puddle) ---- */}
       <mesh position={[-1.55, 0.16, 1.0]}>
@@ -154,7 +154,7 @@ export function Props() {
 }
 
 const POSTER_W = 176
-const POSTER_H = 248 // same 0.72 x 1.02 proportions as the poster plane
+const POSTER_H = 240 // same proportions as the poster plane (0.86 x 1.17)
 
 // The poster on the back wall. It follows the stage: the stage's own image
 // (src/assets/posters/NN.*), else the general poster.*, else the built-in one.
@@ -163,8 +163,8 @@ function BackPoster() {
   const texture = useMemo(() => makePosterTexture(posterUrlForStage(stage)), [stage])
   useEffect(() => () => texture.dispose(), [texture])
   return (
-    <mesh position={[-1.85, 1.75, BACK + 0.012]}>
-      <planeGeometry args={[0.72, 1.02]} />
+    <mesh position={[-1.95, 1.72, BACK + 0.012]}>
+      <planeGeometry args={[0.86, 1.17]} />
       <meshBasicMaterial map={texture} toneMapped={false} />
     </mesh>
   )
