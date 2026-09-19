@@ -38,6 +38,30 @@ Implemented from that: title/briefing/playing/shop screens with camera stations,
 
 The dev environment has no display, but **headless Chromium with software WebGL works**, so the game *can* be looked at. Everything below lives in the session scratchpad, not the repo (Playwright is heavy and only needed for looking): `npm i playwright` + `npx playwright install chromium` in a scratch dir, then launch with `args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']`, `page.goto('http://localhost:5173/')`, wait ~2.5 s for the scene, `page.screenshot(...)`, and read the PNG with the Read tool. Drive states with `page.keyboard.press('Space')` (title → briefing → playing → spin) and `page.mouse.click(x, y)` for the 3D button/lever. **The headless browser has no CJK fonts**, so Japanese in the DOM (order sheet, payout table) renders as boxes in screenshots — that's the sandbox, not the game; and it's the reason text on the 3D machine is English. Software GL is slow but fine for stills. Earlier phases (atmosphere, camera stations, DOM restyle) were built without this and were only ever checked by tests; the first screenshot showed the room almost pitch black, which is what prompted the lighting/room rework.
 
+## Reference site, played through (observed 2026-09-19, headless Chromium)
+
+Played https://vibey-clover.krz-tech.workers.dev/ like a user (Space + screenshots + a hook that logs *which* Web Audio nodes start — no source read). ~5 full stages-worth of spins (about 40 spins over 5 sessions). Japanese text is readable now that a CJK font is installed in `~/.fonts` (Noto Sans JP).
+
+**Look & feel.** Loading text 「読み込み中▌」, then the machine. Low-res pixel render with a CRT filter: rounded screen corners, dark vignette, red/blue colour fringing at the edges, slow camera sway, flickering bulb. Text uses the pixel font **DotGothic16** (Google Fonts). Bottom of the machine has a scrolling ticker (「◆ レートリミット図柄「6」混入中 …」 — it announces the bad symbol is in the deck). Machine reads 「労働端末 No.4 / LABOR TERMINAL」, a STAGE plate (「STAGE 1 新人研修」), a spin-fee slip, a wallet / performance / turns display, and 「デッキ 10枚」 with tiny icons of the deck.
+
+**Flow & UI.** Space (or the red button/lever) → camera to the left wall: 業務命令書 (subject 「STAGE 1「新人研修」ノルマ達成の件」, 納付トークン 45 MTok, 必要性能値 5 P, 残ターン 7, スピン費 12 MTok/回, a boss note 「▼上司より通信」) next to the 作業標準書 rules → Space → back at the machine. **Radio subtitles** (「▼無線:部長 …」) appear bottom-left as tutorial/reaction lines (e.g. 「作業は簡単や。レバー引くか回転キー押すか、それだけや。」, later 「両方のノルマが揃ったな。退場用の伝票、吊るしといたぞ。」). On-screen hint while spinning: 「連打:リール停止 / 長押し:スキップ」 (mash = stop reels, hold = skip the animation). 配当表 board next to the machine (3連 / 4連 / 5連 per symbol, e.g. 182/260/650).
+
+**Spin.** Reels scroll vertically with motion streaks and stop one after another; camera shakes; cells get coloured frames per symbol type; fee taken immediately (wallet 129 → 108…), turns 7 → 6.
+
+**Win.** Winning cells light up gold/blue with corner-bracket sparkles, a **glowing polyline is drawn through the winning cells** (a zigzag/V path in one sample — patterns aren't only rows), white pixel particles fly around the machine, wallet/performance jump (one win took performance to 57/5 and 72/5). **When both quotas are met a 「納付伝票」 slip drops beside the machine** so you can pay and leave early instead of using up the turns.
+
+**Death.** Camera returns to the order sheet, screen goes red, a red **「射殺」 stamp** and **bullet-hole cracks** appear on the paper, then a receipt-style **「死亡診断書」** (VIBEY CLOVER) lists: cause of death (「両ノルマ未達 (36/45 MTok・0/5P)」), 生存ステージ 0/**5**, death stage, total tokens earned, final wallet, reached performance, 装備ハーネス 0/6, and the deck's contents; button 「もう一度出勤する RETRY」. **The game is 5 stages long.**
+
+**Shop (景品交換所).** Camera goes to the right: 8 slips in two columns — each with a number, a category tag, an icon, a name and a red circular price stamp; a green CRT shows 残高 (e.g. 281 MTok), 「購入 [1-8]」, and two desk buttons 「品替え [R]」 (reroll) and 「次のステージへ」; a 「次工程予定」 slip previews the next stage. Item kinds seen: **new symbols added to the deck** (model names), **ハーネス** (gear), **「…を削除」 (remove a symbol from the deck)**, and **[ジョーク]** novelty items (課金, 転売…).
+
+**Sound (structure only — I can't hear it).** No audio files are loaded; everything is synthesized with Web Audio: the first key press starts a bed of **5-second looping noise buffers** (ambience/drone) plus oscillators; one spin fires ~80–95 short oscillator notes (square/sawtooth mostly, some sine/triangle — reel ticks and stops) and ~25–40 noise-loop buffers (the spinning rattle) per spin; **a win adds roughly +40–60 more square-wave notes** (a jingle). Nothing else distinct was measurable.
+
+**Hit rate.** About 3 winning spins in ~38 (≈ 8%) — low, but wins are big (hundreds of tokens, tens of performance). So the reference isn't generous either; it just pays hard.
+
+**Not seen.** I did **not** trigger a full-row/"jackpot" effect in ~40 spins (odds are low), so I can't say what one looks like or whether it exists. A screenshot from the user would settle it.
+
+**Gaps vs. this project (ideas, not decisions).** Radio subtitles; early-pay slip when both quotas are met; a death certificate with run stats; red overlay + stamp + bullet holes on game over; win path line + corner sparkles + particles; reel motion streaks and player-stoppable reels; a deck/"remove a symbol" shop economy; DotGothic16 as the UI font; CRT rounded-corner/vignette filter; a fixed 5-stage run with an ending.
+
 ## Decisions
 
 Notable choices made along the way that aren't obvious from the code and would be easy to accidentally reverse or contradict later. One line: what + why. (Big architectural ones already live in `CLAUDE.md` — don't duplicate those here; this is for the smaller in-the-weeds ones that come up while implementing.)
