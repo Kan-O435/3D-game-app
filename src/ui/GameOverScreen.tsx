@@ -4,7 +4,7 @@ export function GameOverScreen() {
   const isGameOver = useGameStore((s) => s.status === 'gameOver')
   const stage = useGameStore((s) => s.stage)
   const money = useGameStore((s) => s.money)
-  const quota = useGameStore((s) => s.quota)
+  const due = useGameStore((s) => s.due)
   const restart = useGameStore((s) => s.restart)
 
   if (!isGameOver) return null
@@ -25,9 +25,9 @@ export function GameOverScreen() {
       }}
     >
       <div style={{ fontSize: 56, fontWeight: 800, letterSpacing: 6, color: '#c0392b' }}>GAME OVER</div>
-      <div style={{ fontSize: 20 }}>Failed stage {stage}</div>
+      <div style={{ fontSize: 20 }}>Couldn't pay at stage {stage}</div>
       <div style={{ fontSize: 16, color: '#999' }}>
-        MONEY {money} / QUOTA {quota}
+        MONEY {money} / DUE {due}
       </div>
       <button
         onClick={restart}

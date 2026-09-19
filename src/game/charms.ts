@@ -15,7 +15,7 @@ export interface Modifiers {
   consolation: number
   // Extra multiplier for wins that are 4+ symbols long.
   longMatchMultiplier: number
-  // Coins granted when a stage is cleared.
+  // Coins granted right after a stage's debt is paid.
   clearBonus: number
   // Pattern ids (see paylines.ts) unlocked on top of the base rows.
   extraPatterns: string[]
@@ -37,7 +37,7 @@ function boost(m: Modifiers, ids: number[], factor: number) {
 
 // Names/flavor text are placeholders until the icon theme is settled (see
 // docs/NOTES.md); ids and effects are what the rest of the code depends on.
-// Prices/effects were tuned by simulation against the quota curve in stage.ts:
+// Prices/effects were tuned by simulation against the payment curve in stage.ts:
 // each charm pays back in ~2 stages, and buying aggressively raises both the
 // odds of an early loss and of a deep run (see docs/NOTES.md).
 export const CHARMS: readonly CharmDef[] = [
@@ -93,7 +93,7 @@ export const CHARMS: readonly CharmDef[] = [
   {
     id: 'fate-dice',
     name: '運命の賽',
-    description: 'ステージクリアで +6 コイン',
+    description: '支払いのあと +6 コイン',
     price: 10,
     apply: (m) => void (m.clearBonus += 6),
   },

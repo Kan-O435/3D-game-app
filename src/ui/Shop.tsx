@@ -1,5 +1,5 @@
 import { useGameStore } from '../store/gameStore'
-import { findCharm } from '../game'
+import { dueForStage, findCharm } from '../game'
 
 // Between-stage shop. Reads/writes the store only; the store decides what's
 // buyable, this just renders it.
@@ -7,7 +7,7 @@ export function Shop() {
   const isShop = useGameStore((s) => s.status === 'shop')
   const stage = useGameStore((s) => s.stage)
   const money = useGameStore((s) => s.money)
-  const quota = useGameStore((s) => s.quota)
+  const due = useGameStore((s) => s.due)
   const offer = useGameStore((s) => s.shopOffer)
   const owned = useGameStore((s) => s.charms)
   const buyCharm = useGameStore((s) => s.buyCharm)
@@ -33,14 +33,14 @@ export function Shop() {
       }}
     >
       <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: 4, color: '#2ecc71' }}>
-        STAGE {stage - 1} CLEAR
+        PAID {dueForStage(stage - 1)}
       </div>
       <div style={{ fontSize: 18 }}>
         MONEY <span style={{ color: '#f1c40f' }}>{money}</span>
-        <span style={{ color: '#999' }}> / NEXT QUOTA {quota}</span>
+        <span style={{ color: '#999' }}> / NEXT DUE {due}</span>
       </div>
       <div style={{ fontSize: 13, color: '#999' }}>
-        使ったコインは次のノルマにも響く — 買うか、貯めるか
+        次の期限までに払えるだけ残す — 買うか、貯めるか
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center' }}>

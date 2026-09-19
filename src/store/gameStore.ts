@@ -7,7 +7,7 @@ import {
   resolveModifiers,
   drawShopOffer,
   findCharm,
-  quotaForStage,
+  dueForStage,
   CELL_COUNT,
   SYMBOL_COUNT,
   STARTING_MONEY,
@@ -18,7 +18,8 @@ import {
 } from '../game'
 import { playSpinStart, playWarning } from '../audio/audioEngine'
 
-// 'shop' sits between stages: entered on a stage clear, left via leaveShop().
+// 'shop' sits between stages: entered after paying a stage's debt, left via
+// leaveShop().
 export type GameStatus = 'playing' | 'shop' | 'gameOver'
 
 interface GameState {
@@ -29,14 +30,17 @@ interface GameState {
   status: GameStatus
   money: number
   stage: number
-  quota: number
+  // Debt payment owed when this stage's turns run out.
+  due: number
+  // Turns left before the deadline (the last one is the deadline turn).
   turnsLeft: number
   // Owned charm ids (each can be owned once) and the current shop's stock.
   charms: string[]
   shopOffer: string[]
   spin: () => void
   // Called by the reel animation once every column has visually stopped.
-  // This is where the payout lands in `money` and the stage outcome is decided.
+  // This is where the payout lands in `money` and, on the deadline turn, the
+  // debt is paid (or the run ends).
   finishSpin: () => void
   buyCharm: (id: string) => void
   leaveShop: () => void
@@ -55,7 +59,7 @@ const freshRun = () => ({
   status: 'playing' as GameStatus,
   money: STARTING_MONEY,
   stage: 1,
-  quota: quotaForStage(1),
+  due: dueForStage(1),
   turnsLeft: TURNS_PER_STAGE,
   charms: [] as string[],
   shopOffer: [] as string[],
@@ -85,28 +89,31 @@ export const useGameStore = create<GameState>((set, get) => ({
     const s = get()
     const money = s.money + s.lastPayout
 
-    if (money >= s.quota) {
-      // Money carries over. The turn allowance resets when the shop is left,
-      // so charms bought there (e.g. +1 turn) count for the coming stage.
-      const stage = s.stage + 1
-      set({
-        isSpinning: false,
-        money: money + resolveModifiers(s.charms).clearBonus,
-        stage,
-        quota: quotaForStage(stage),
-        status: 'shop',
-        shopOffer: drawShopOffer(s.charms),
-      })
+    // Deadline not reached yet — keep spinning. (Having enough money already
+    // doesn't end the stage early; the payment is taken on the last turn.)
+    if (s.turnsLeft > 0) {
+      if (s.turnsLeft <= WARNING_TURNS) playWarning()
+      set({ isSpinning: false, money })
       return
     }
 
-    if (s.turnsLeft <= 0) {
+    // Deadline: pay the debt or it's over.
+    if (money < s.due) {
       set({ isSpinning: false, money, status: 'gameOver' })
       return
     }
 
-    if (s.turnsLeft <= WARNING_TURNS) playWarning()
-    set({ isSpinning: false, money })
+    // Paid. Leftover coins carry over. The turn allowance resets when the shop
+    // is left, so charms bought there (e.g. +1 turn) count for the next stage.
+    const stage = s.stage + 1
+    set({
+      isSpinning: false,
+      money: money - s.due + resolveModifiers(s.charms).clearBonus,
+      stage,
+      due: dueForStage(stage),
+      status: 'shop',
+      shopOffer: drawShopOffer(s.charms),
+    })
   },
   buyCharm: (id) => {
     const { status, shopOffer, charms, money } = get()

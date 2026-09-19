@@ -12,7 +12,7 @@ export interface SymbolDef {
 
 // Tiered like a real slot: many common/low-pay symbols, a few rare/high-pay
 // ones. Weights and payouts below are placeholder guesses, not tuned — see
-// docs/NOTES.md ("Turn count / quota curve") for the balance work still to
+// docs/NOTES.md ("Turn count / payment curve") for the balance work still to
 // do. CLAUDE.md's tiered example (CloverPit's own payout shape) is the
 // calibration reference for the *shape* of this table, not its values.
 export const SYMBOLS: readonly SymbolDef[] = [

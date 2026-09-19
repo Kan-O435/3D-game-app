@@ -26,18 +26,18 @@ const rowStyle: CSSProperties = {
 
 const labelStyle: CSSProperties = { color: '#999', letterSpacing: 1 }
 
-// Money / quota / turns readout, plus the transient "+N" and "STAGE CLEAR"
+// Money / due / turns readout, plus the transient "+N" and "STAGE CLEAR"
 // callouts. Purely reads the store — DOM overlay sibling of the <Canvas>.
 export function Hud() {
   const money = useGameStore((s) => s.money)
-  const quota = useGameStore((s) => s.quota)
+  const due = useGameStore((s) => s.due)
   const stage = useGameStore((s) => s.stage)
   const turnsLeft = useGameStore((s) => s.turnsLeft)
   const isSpinning = useGameStore((s) => s.isSpinning)
   const lastPayout = useGameStore((s) => s.lastPayout)
   const charms = useGameStore((s) => s.charms)
 
-  const progress = Math.min(1, money / quota)
+  const progress = Math.min(1, money / due)
   const lowTurns = turnsLeft <= WARNING_TURNS
 
   return (
@@ -52,8 +52,8 @@ export function Hud() {
           <span style={{ color: '#f1c40f' }}>{money}</span>
         </div>
         <div style={rowStyle}>
-          <span style={labelStyle}>QUOTA</span>
-          <span>{quota}</span>
+          <span style={labelStyle}>DUE</span>
+          <span>{due}</span>
         </div>
         <div style={{ height: 6, margin: '4px 0 6px', background: '#333', borderRadius: 3 }}>
           <div
@@ -67,9 +67,9 @@ export function Hud() {
           />
         </div>
         <div style={rowStyle}>
-          <span style={labelStyle}>TURNS</span>
+          <span style={labelStyle}>DEADLINE</span>
           <span style={{ color: lowTurns ? '#e74c3c' : undefined, fontWeight: lowTurns ? 700 : undefined }}>
-            {turnsLeft}
+            {turnsLeft} turns
           </span>
         </div>
         <div style={{ marginTop: 8, fontSize: 11, color: '#777', lineHeight: 1.5 }}>

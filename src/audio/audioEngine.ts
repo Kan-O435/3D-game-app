@@ -128,8 +128,36 @@ export function playWin(): void {
   }
 }
 
-// Not called from anywhere yet — Phase 7's turn/quota state is what should
-// trigger this (e.g. "2 turns left"), once that state exists.
+// Fired by the store when the stage is nearly out of turns.
 export function playWarning(): void {
   playTone(110, 0.3, { type: 'sawtooth', gain: 0.3 })
+}
+
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null
+let heartbeatBpmNow = 0
+
+function thump(): void {
+  // "lub-dub": two low, short sine hits.
+  playTone(58, 0.14, { gain: 0.55 })
+  playTone(48, 0.16, { gain: 0.4, delay: 0.17 })
+}
+
+// Loops a heartbeat at `bpm`; 0 (or anything <= 0) stops it. Safe to call
+// every time the level changes — an unchanged bpm is a no-op. Does nothing
+// until the audio context exists (i.e. after the first user gesture), so the
+// caller doesn't need to know about the autoplay policy.
+export function setHeartbeat(bpm: number): void {
+  if (bpm === heartbeatBpmNow) return
+  if (heartbeatTimer !== null) {
+    clearInterval(heartbeatTimer)
+    heartbeatTimer = null
+  }
+  if (bpm <= 0 || !audioContext) {
+    // Stay at 0 (not `bpm`) so a later call with the same value can still start.
+    heartbeatBpmNow = 0
+    return
+  }
+  heartbeatBpmNow = bpm
+  thump()
+  heartbeatTimer = setInterval(thump, 60000 / bpm)
 }
