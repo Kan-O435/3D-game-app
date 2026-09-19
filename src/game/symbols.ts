@@ -1,5 +1,11 @@
+// normal — pays on pattern runs like any symbol.
+// wild — substitutes for any normal symbol in a run (never for scatter).
+// scatter — never part of a run; pays by how many appear anywhere on the grid.
+export type SymbolKind = 'normal' | 'wild' | 'scatter'
+
 export interface SymbolDef {
   id: number
+  kind: SymbolKind
   weight: number
   payout: number
 }
@@ -11,24 +17,28 @@ export interface SymbolDef {
 // calibration reference for the *shape* of this table, not its values.
 export const SYMBOLS: readonly SymbolDef[] = [
   // Common — weight 20, payout 2 (x5)
-  { id: 0, weight: 20, payout: 2 },
-  { id: 1, weight: 20, payout: 2 },
-  { id: 2, weight: 20, payout: 2 },
-  { id: 3, weight: 20, payout: 2 },
-  { id: 4, weight: 20, payout: 2 },
+  { id: 0, kind: 'normal', weight: 20, payout: 2 },
+  { id: 1, kind: 'normal', weight: 20, payout: 2 },
+  { id: 2, kind: 'normal', weight: 20, payout: 2 },
+  { id: 3, kind: 'normal', weight: 20, payout: 2 },
+  { id: 4, kind: 'normal', weight: 20, payout: 2 },
   // Uncommon — weight 10, payout 4 (x5)
-  { id: 5, weight: 10, payout: 4 },
-  { id: 6, weight: 10, payout: 4 },
-  { id: 7, weight: 10, payout: 4 },
-  { id: 8, weight: 10, payout: 4 },
-  { id: 9, weight: 10, payout: 4 },
+  { id: 5, kind: 'normal', weight: 10, payout: 4 },
+  { id: 6, kind: 'normal', weight: 10, payout: 4 },
+  { id: 7, kind: 'normal', weight: 10, payout: 4 },
+  { id: 8, kind: 'normal', weight: 10, payout: 4 },
+  { id: 9, kind: 'normal', weight: 10, payout: 4 },
   // Rare — weight 4, payout 8 (x3)
-  { id: 10, weight: 4, payout: 8 },
-  { id: 11, weight: 4, payout: 8 },
-  { id: 12, weight: 4, payout: 8 },
-  // Super rare — weight 1, payout 20 (x2)
-  { id: 13, weight: 1, payout: 20 },
-  { id: 14, weight: 1, payout: 20 },
+  { id: 10, kind: 'normal', weight: 4, payout: 8 },
+  { id: 11, kind: 'normal', weight: 4, payout: 8 },
+  { id: 12, kind: 'normal', weight: 4, payout: 8 },
+  // Specials. The wild's payout applies to a run made only of wilds; the
+  // scatter's payout is unused (see SCATTER_PAYOUT in paylines.ts).
+  { id: 13, kind: 'scatter', weight: 9, payout: 0 },
+  { id: 14, kind: 'wild', weight: 2, payout: 20 },
 ]
 
 export const SYMBOL_COUNT = SYMBOLS.length
+
+export const WILD_ID = SYMBOLS.find((s) => s.kind === 'wild')!.id
+export const SCATTER_ID = SYMBOLS.find((s) => s.kind === 'scatter')!.id

@@ -72,6 +72,10 @@ export function Hud() {
             {turnsLeft}
           </span>
         </div>
+        <div style={{ marginTop: 8, fontSize: 11, color: '#777', lineHeight: 1.5 }}>
+          W = ワイルド（何にでも化ける）
+          <br />★ = 3個以上でボーナス（どこでも可）
+        </div>
         {charms.length > 0 && (
           <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #444', fontSize: 12, color: '#bbb' }}>
             {charms.map((id) => (

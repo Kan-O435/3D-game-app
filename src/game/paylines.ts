@@ -1,6 +1,6 @@
 import { COLUMNS } from './layout'
 import { cellAt, type Grid } from './spin'
-import { SYMBOLS } from './symbols'
+import { SCATTER_ID, SYMBOLS, WILD_ID } from './symbols'
 
 // A payline is one row index per column: [1,1,1,1,1] is the middle row,
 // [0,1,2,1,0] a V. Wins are matched left-to-right from column 0 along it.
@@ -48,16 +48,70 @@ const MIN_MATCH = 2
 // simulation together with src/game/stage.ts's quota curve (median run clears
 // ~4 stages); still not final balance.
 const MATCH_MULTIPLIER: Readonly<Record<number, number>> = {
-  2: 2,
-  3: 6,
-  4: 20,
-  5: 60,
+  2: 1.5,
+  3: 4.5,
+  4: 15,
+  5: 45,
 }
 
 function payoutFor(symbolId: number, matchLength: number): number {
   const symbol = SYMBOLS.find((s) => s.id === symbolId)
   if (!symbol) throw new Error(`Unknown symbol id: ${symbolId}`)
   return symbol.payout * (MATCH_MULTIPLIER[matchLength] ?? 0)
+}
+
+// Scatter payout by how many scatters are on the grid (3 minimum; more than 5
+// pays the 5 rate). Flat coins — not multiplied by the line-match table.
+const SCATTER_MIN = 3
+const SCATTER_PAYOUT: Readonly<Record<number, number>> = {
+  3: 6,
+  4: 20,
+  5: 60,
+}
+
+const KIND_BY_ID = new Map(SYMBOLS.map((s) => [s.id, s.kind]))
+
+// Walks one pattern from column 0. Wilds extend a run of whatever normal
+// symbol shows up first (so W,W,A,A,B is a 4-run of A); a scatter or a
+// different normal symbol ends it. A run of only wilds pays as the wild.
+function winOnPattern(grid: Grid, pattern: Pattern): LineWin | null {
+  let base: number | null = null
+  let length = 0
+
+  for (let col = 0; col < COLUMNS; col++) {
+    const id = cellAt(grid, col, pattern.rows[col])
+    const kind = KIND_BY_ID.get(id)
+    if (kind === 'scatter') break
+    if (kind === 'normal') {
+      if (base === null) base = id
+      else if (id !== base) break
+    }
+    length++
+  }
+
+  if (length < MIN_MATCH) return null
+  const symbolId = base ?? WILD_ID
+  return {
+    patternId: pattern.id,
+    symbolId,
+    matchLength: length,
+    cells: pattern.rows.slice(0, length).map((row, col) => row * COLUMNS + col),
+    payout: payoutFor(symbolId, length) * pattern.payoutFactor,
+  }
+}
+
+// Scatters pay wherever they land, independent of any pattern, so this part
+// ignores `activePatternIds`.
+function scatterWin(grid: Grid): LineWin | null {
+  const cells = grid.flatMap((id, i) => (id === SCATTER_ID ? [i] : []))
+  if (cells.length < SCATTER_MIN) return null
+  return {
+    patternId: 'scatter',
+    symbolId: SCATTER_ID,
+    matchLength: cells.length,
+    cells,
+    payout: SCATTER_PAYOUT[Math.min(cells.length, 5)],
+  }
 }
 
 export function findLineWins(
@@ -68,22 +122,12 @@ export function findLineWins(
 
   for (const pattern of PATTERNS) {
     if (!activePatternIds.includes(pattern.id)) continue
-
-    const first = cellAt(grid, 0, pattern.rows[0])
-    let matchLength = 1
-    while (matchLength < COLUMNS && cellAt(grid, matchLength, pattern.rows[matchLength]) === first) {
-      matchLength++
-    }
-    if (matchLength >= MIN_MATCH) {
-      wins.push({
-        patternId: pattern.id,
-        symbolId: first,
-        matchLength,
-        cells: pattern.rows.slice(0, matchLength).map((row, col) => row * COLUMNS + col),
-        payout: payoutFor(first, matchLength) * pattern.payoutFactor,
-      })
-    }
+    const win = winOnPattern(grid, pattern)
+    if (win) wins.push(win)
   }
+
+  const scatter = scatterWin(grid)
+  if (scatter) wins.push(scatter)
 
   return wins
 }

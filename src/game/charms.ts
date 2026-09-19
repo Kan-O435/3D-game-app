@@ -1,4 +1,5 @@
 import type { LineWin } from './paylines'
+import { SCATTER_ID, WILD_ID } from './symbols'
 
 // What the player's owned charms add up to. The spin/payout pipeline only ever
 // reads this, so a charm is just "a function that nudges a Modifiers".
@@ -44,7 +45,7 @@ export const CHARMS: readonly CharmDef[] = [
     id: 'blood-pact',
     name: '血の契約',
     description: '配当が 25% 増える',
-    price: 13,
+    price: 16,
     apply: (m) => void (m.payoutMultiplier += 0.25),
   },
   {
@@ -57,16 +58,16 @@ export const CHARMS: readonly CharmDef[] = [
   {
     id: 'rusty-key',
     name: '錆びた鍵',
-    description: '低位シンボル(0-4)が出やすくなる',
-    price: 7,
-    apply: (m) => boost(m, range(0, 4), 1.5),
+    description: '低位シンボルが出やすくなる',
+    price: 5,
+    apply: (m) => boost(m, range(0, 4), 3),
   },
   {
     id: 'black-cat-eye',
     name: '黒猫の目',
-    description: '高位シンボル(10-14)が出やすくなる',
-    price: 10,
-    apply: (m) => boost(m, range(10, 14), 4),
+    description: 'レアシンボルが出やすくなる',
+    price: 20,
+    apply: (m) => boost(m, range(10, 12), 6),
   },
   {
     id: 'pity-coin',
@@ -79,7 +80,7 @@ export const CHARMS: readonly CharmDef[] = [
     id: 'silver-tooth',
     name: '銀の歯',
     description: '当たりのラインごとに +1 コイン',
-    price: 9,
+    price: 11,
     apply: (m) => void (m.winBonus += 1),
   },
   {
@@ -95,6 +96,20 @@ export const CHARMS: readonly CharmDef[] = [
     description: 'ステージクリアで +6 コイン',
     price: 10,
     apply: (m) => void (m.clearBonus += 6),
+  },
+  {
+    id: 'wild-tongue',
+    name: '偽りの舌',
+    description: 'ワイルド(W)が出やすくなる',
+    price: 12,
+    apply: (m) => boost(m, [WILD_ID], 2),
+  },
+  {
+    id: 'star-lure',
+    name: '星の誘い',
+    description: 'ボーナス(★)が出やすくなる',
+    price: 12,
+    apply: (m) => boost(m, [SCATTER_ID], 1.4),
   },
   {
     id: 'v-scar',
@@ -135,8 +150,10 @@ export function resolveModifiers(ownedIds: readonly string[]): Modifiers {
 // `LineWin.payout` directly now that charms can bend the result.
 export function computePayout(wins: readonly LineWin[], m: Modifiers): number {
   if (wins.length === 0) return m.consolation
+  // The long-match bonus is about pattern runs; a scatter count isn't a "run".
+  const isLongRun = (w: LineWin) => w.patternId !== 'scatter' && w.matchLength >= 4
   const base = wins.reduce(
-    (sum, w) => sum + w.payout * (w.matchLength >= 4 ? m.longMatchMultiplier : 1) + m.winBonus,
+    (sum, w) => sum + w.payout * (isLongRun(w) ? m.longMatchMultiplier : 1) + m.winBonus,
     0,
   )
   return Math.round(base * m.payoutMultiplier)

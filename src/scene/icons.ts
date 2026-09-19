@@ -1,5 +1,5 @@
 import { CanvasTexture } from 'three'
-import { SYMBOL_COUNT } from '../game/symbols'
+import { SYMBOL_COUNT, SYMBOLS } from '../game/symbols'
 
 export { SYMBOL_COUNT }
 
@@ -22,11 +22,21 @@ export function createPlaceholderIconTexture(symbolIndex: number): CanvasTexture
   ctx.fillStyle = PLACEHOLDER_COLORS[symbolIndex % PLACEHOLDER_COLORS.length]
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-  ctx.fillStyle = '#00000080'
+  // Specials get a border and a letter instead of a number so they read as
+  // different at a glance (wild = W, scatter = star).
+  const kind = SYMBOLS.find((sym) => sym.id === symbolIndex)?.kind ?? 'normal'
+  if (kind !== 'normal') {
+    ctx.strokeStyle = '#ffffff'
+    ctx.lineWidth = 8
+    ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8)
+  }
+
+  ctx.fillStyle = kind === 'normal' ? '#00000080' : '#000000cc'
   ctx.font = 'bold 56px sans-serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText(String(symbolIndex + 1), canvas.width / 2, canvas.height / 2)
+  const label = kind === 'wild' ? 'W' : kind === 'scatter' ? '★' : String(symbolIndex + 1)
+  ctx.fillText(label, canvas.width / 2, canvas.height / 2)
 
   const texture = new CanvasTexture(canvas)
   texture.needsUpdate = true
