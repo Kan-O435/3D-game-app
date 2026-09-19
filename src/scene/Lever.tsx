@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type { Group } from 'three'
+import { leverAngle } from './motion'
 import { useGameStore } from '../store/gameStore'
 import { pressPush } from '../store/actions'
 
@@ -9,21 +10,25 @@ import { pressPush } from '../store/actions'
 // and springs back.
 export function Lever({ position }: { position: [number, number, number] }) {
   const pivot = useRef<Group>(null)
-  const pull = useRef(0)
+  const pullAt = useRef(-100)
+  const pending = useRef(false)
 
   useEffect(
     () =>
       useGameStore.subscribe((s, prev) => {
-        if (s.isSpinning && !prev.isSpinning) pull.current = 1
+        // Note the pull; the frame loop stamps it with the scene clock.
+        if (s.isSpinning && !prev.isSpinning) pending.current = true
       }),
     [],
   )
 
-  useFrame((_, dt) => {
-    pull.current = Math.max(0, pull.current - dt * 1.6)
-    // Snap down fast, then ease back: sin(pi * t) over the decay.
-    const angle = -0.12 + Math.sin(Math.PI * (1 - pull.current)) * (pull.current > 0 ? 0.95 : 0)
-    if (pivot.current) pivot.current.rotation.x = angle
+  useFrame(({ clock }) => {
+    const now = clock.elapsedTime
+    if (pending.current) {
+      pending.current = false
+      pullAt.current = now
+    }
+    if (pivot.current) pivot.current.rotation.x = -0.12 + leverAngle(now - pullAt.current)
   })
 
   return (

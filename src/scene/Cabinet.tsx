@@ -1,11 +1,12 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import type { Mesh, MeshStandardMaterial } from 'three'
+import type { Group, Mesh, MeshStandardMaterial } from 'three'
 import { useGameStore } from '../store/gameStore'
 import { pressPush } from '../store/actions'
 import { noiseCanvas, toTexture } from './canvasTextures'
 import { ReelGrid } from './ReelGrid'
 import { Lever } from './Lever'
+import { motion, shake, thud, winHop } from './motion'
 import { DisplayStrip, FeePlate, MarqueeSign, StagePlate, TerminalPlate, Ticker } from './MachineScreens'
 
 // The slot machine, modelled after the reference's default screen: a lit sign on
@@ -21,11 +22,32 @@ const BODY_H = 1.62
 const BULBS = 11 // chase lights along the top of the sign
 
 export function Cabinet() {
+  const root = useRef<Group>(null)
+  const rattle = useRef(0)
   const bodyTexture = useMemo(() => toTexture(noiseCanvas(32, '#57231d', ['#43190f', '#6a2c24', '#36140f', '#7a3a2c'], 260, 21), { repeat: [3, 5] }), [])
   const frameColor = '#15110e'
 
+  // The whole machine has weight: it rattles while the reels spin, thumps as each
+  // reel lands, hops after a win and shudders after a win or a rate limit. The
+  // offsets come from event times in motion.ts, so there's no per-frame decay state.
+  useFrame(({ clock }, dt) => {
+    const group = root.current
+    if (!group) return
+    const now = clock.elapsedTime
+    rattle.current += ((motion.spinning ? 1 : 0) - rattle.current) * Math.min(1, dt * 10)
+    const landing = thud(now, motion.landings)
+    const hop = winHop(now, motion.winAt, motion.winPower)
+    const hit = Math.max(shake(now, motion.winAt, motion.winPower * 0.5), shake(now, motion.limitAt, 1.2))
+    group.position.set(
+      Math.sin(now * 71) * 0.0035 * rattle.current + Math.sin(now * 53) * 0.01 * hit,
+      hop - landing * 0.014 + Math.sin(now * 83) * 0.002 * rattle.current + Math.sin(now * 61) * 0.008 * hit,
+      0,
+    )
+    group.scale.y = 1 - landing * 0.004 + hop * 0.05
+  })
+
   return (
-    <group>
+    <group ref={root}>
       {/* plinth + body + sign box */}
       <mesh position={[0, BODY_Y / 2, 0.03]}>
         <boxGeometry args={[WIDTH + 0.22, BODY_Y, 0.62]} />
@@ -125,9 +147,13 @@ function ChaseBulbs({ y, z }: { y: number; z: number }) {
   useFrame(({ clock }) => {
     const s = useGameStore.getState()
     const speed = s.isSpinning ? 9 : 2.2
+    // right after a win the whole row strobes
+    const strobing = clock.elapsedTime - motion.winAt < 1.4
     bulbs.current.forEach((m, i) => {
       if (!m) return
-      m.emissiveIntensity = 0.25 + 0.75 * Math.max(0, Math.sin(clock.elapsedTime * speed - i * 0.7))
+      m.emissiveIntensity = strobing
+        ? Math.sin(clock.elapsedTime * 34 + (i % 2) * Math.PI) > 0 ? 1.6 : 0.12
+        : 0.25 + 0.75 * Math.max(0, Math.sin(clock.elapsedTime * speed - i * 0.7))
     })
   })
 

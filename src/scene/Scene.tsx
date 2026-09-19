@@ -4,6 +4,7 @@ import { FixedCamera } from './FixedCamera'
 import { Cabinet } from './Cabinet'
 import { Props } from './Props'
 import { PaySlip } from './PaySlip'
+import { CoinBurst } from './CoinBurst'
 import { MoodDriver } from './MoodDriver'
 import { Atmosphere } from './Atmosphere'
 
@@ -17,6 +18,7 @@ export function Scene() {
       <Cabinet />
       <Props />
       <PaySlip />
+      <CoinBurst />
       <Atmosphere />
     </>
   )

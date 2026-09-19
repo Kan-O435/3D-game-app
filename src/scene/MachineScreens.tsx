@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useGameStore } from '../store/gameStore'
 import { PIXEL_FONT, makeCanvas, toTexture } from './canvasTextures'
+import { easeValue } from '../ui/countUp'
 
 // The machine's lit-up signs and displays. Each is a plane with a low-res canvas
 // texture that gets redrawn when the numbers it shows change (the canvases are
@@ -53,6 +54,27 @@ function Screen({ width, height, position, texture, children }: { width: number;
       {children}
     </mesh>
   )
+}
+
+/** A number that rolls to its new value (used for the coin readout). */
+function useRollingNumber(target: number, durationMs = 500): number {
+  const [shown, setShown] = useState(target)
+  const current = useRef(target)
+  useEffect(() => {
+    const from = current.current
+    if (from === target) return
+    const start = performance.now()
+    let frame = 0
+    const tick = (now: number) => {
+      const next = easeValue(from, target, (now - start) / durationMs)
+      current.current = next
+      setShown(next)
+      if (next !== target) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [target, durationMs])
+  return shown
 }
 
 /** The lit sign on top of the machine. */
@@ -120,9 +142,11 @@ export function TerminalPlate({ position }: { position: [number, number, number]
 export function DisplayStrip({ position }: { position: [number, number, number] }) {
   const status = useGameStore((s) => s.status)
   const isSpinning = useGameStore((s) => s.isSpinning)
-  const money = useGameStore((s) => s.money)
+  const moneyNow = useGameStore((s) => s.money)
+  const money = useRollingNumber(moneyNow)
   const due = useGameStore((s) => s.due)
-  const perf = useGameStore((s) => s.perf)
+  const perfNow = useGameStore((s) => s.perf)
+  const perf = useRollingNumber(perfNow)
   const perfNeeded = useGameStore((s) => s.perfNeeded)
   const turnsLeft = useGameStore((s) => s.turnsLeft)
   const spinCost = useGameStore((s) => s.spinCost)

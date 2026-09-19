@@ -5,6 +5,7 @@ import { createPlaceholderIconTexture, SYMBOL_COUNT } from './icons'
 import { seeded } from './canvasTextures'
 import { CELL_SIZE, GRID_HEIGHT, STEP, cellPosition, rowY } from './reelLayout'
 import { WinEffects } from './WinEffects'
+import { markLanding, markLimit, markWin, motion, popScale, scrollPhase } from './motion'
 import { COLUMNS, ROWS } from '../game/layout'
 import { useGameStore } from '../store/gameStore'
 import { playRateLimit, playReelStop, playWin } from '../audio/audioEngine'
@@ -80,6 +81,7 @@ export function ReelGrid({ position }: ReelGridProps) {
   const seenStops = useRef(0)
   const seenSkips = useRef(0)
   const finished = useRef(true)
+  const resultAt = useRef(-100) // when the last spin finished (for the win pop)
 
   // A rate limit lights its cells red instead of pulsing them as a win.
   const rateLimited = useMemo(() => lastWins.some((w) => w.patternId === 'rate-limit'), [lastWins])
@@ -96,6 +98,17 @@ export function ReelGrid({ position }: ReelGridProps) {
     return cells
   }, [isSpinning, lastWins])
 
+  // Winning cells pop one after another along the path (about 70 ms apart).
+  const popDelay = useMemo(() => {
+    const delays = new Map<number, number>()
+    if (isSpinning) return delays
+    let order = 0
+    for (const win of lastWins) {
+      for (const cell of win.cells) if (!delays.has(cell)) delays.set(cell, order++ * 0.07)
+    }
+    return delays
+  }, [isSpinning, lastWins])
+
   useFrame(({ clock }) => {
     const now = clock.elapsedTime
 
@@ -108,6 +121,7 @@ export function ReelGrid({ position }: ReelGridProps) {
       seenStops.current = s.reelStops
       seenSkips.current = s.reelSkips
       finished.current = false
+      motion.spinning = true
     }
     wasSpinning.current = isSpinning
 
@@ -121,7 +135,10 @@ export function ReelGrid({ position }: ReelGridProps) {
         material.map = textures[grid[i]]
         material.color.set(rateLimited && winningCells.has(i) ? '#ff4b3a' : '#ffffff')
         mesh.position.y = cellPosition(i)[1]
-        mesh.scale.setScalar(winningCells.has(i) && !rateLimited ? 1 + Math.sin(now * 6) * 0.05 : 1)
+        // the pop (overshoot then settle), then a gentle pulse
+        const popAge = now - resultAt.current - (popDelay.get(i) ?? 0)
+        const winning = winningCells.has(i) && !rateLimited
+        mesh.scale.setScalar(winning ? popScale(popAge) + (popAge > 0.6 ? Math.sin(now * 6) * 0.04 : 0) : 1)
       }
       hideAll(stripRefs.current)
       hideAll(ghostRefs.current)
@@ -141,7 +158,8 @@ export function ReelGrid({ position }: ReelGridProps) {
     }
 
     // ---- each column: rolling strip, or landed ---------------------------
-    const phase = (now - spinStart.current) * SCROLL_SPEED
+    // the strips ease up to speed instead of starting at full tilt
+    const phase = scrollPhase(now - spinStart.current, SCROLL_SPEED)
     const shift = Math.floor(phase)
     const frac = (phase - shift) * STEP
     let landedThisFrame = false
@@ -152,6 +170,7 @@ export function ReelGrid({ position }: ReelGridProps) {
         stopped.current[col] = true
         settleAt.current[col] = now
         landedThisFrame = true
+        markLanding(now)
       }
 
       for (let row = 0; row < ROWS; row++) {
@@ -191,8 +210,15 @@ export function ReelGrid({ position }: ReelGridProps) {
 
     if (!finished.current && stopped.current.every(Boolean)) {
       finished.current = true
-      if (rateLimited) playRateLimit()
-      else if (lastWins.length > 0) playWin()
+      motion.spinning = false
+      resultAt.current = now
+      if (rateLimited) {
+        playRateLimit()
+        markLimit(now)
+      } else if (lastWins.length > 0) {
+        playWin()
+        markWin(now, useGameStore.getState().lastPayout)
+      }
       finishSpin()
     }
   })
