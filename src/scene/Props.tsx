@@ -5,6 +5,7 @@ import { AimedSpot } from './AimedSpot'
 import { ROOM } from './roomLayout'
 
 const BACK = ROOM.minZ // z of the back wall
+const WINDOW_X = 2.05 // the barred window sits well to the right of the machine
 
 // Set dressing: the barred window and its blue light, a bucket, crates, pipes,
 // and the two stations the camera visits off the machine (order wall on the
@@ -19,20 +20,20 @@ export function Props() {
   return (
     <>
       {/* ---- barred window on the back wall, with the blue light it lets in ---- */}
-      <mesh position={[1.25, 2.05, BACK + 0.01]}>
+      <mesh position={[WINDOW_X, 2.05, BACK + 0.01]}>
         <planeGeometry args={[0.8, 0.6]} />
         <meshBasicMaterial map={windowTexture} toneMapped={false} />
       </mesh>
       {/* soft glow on the wall around/below the window, and a pool on the floor */}
-      <mesh position={[1.1, 1.3, BACK + 0.02]}>
+      <mesh position={[WINDOW_X - 0.15, 1.3, BACK + 0.02]}>
         <planeGeometry args={[2.4, 2.8]} />
         <meshBasicMaterial map={glow} color="#3f78c8" transparent opacity={0.55} blending={AdditiveBlending} depthWrite={false} />
       </mesh>
-      <mesh position={[0.9, 0.012, -0.35]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[WINDOW_X - 0.35, 0.012, -0.35]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[2.6, 2.2]} />
         <meshBasicMaterial map={glow} color="#3f78c8" transparent opacity={0.6} blending={AdditiveBlending} depthWrite={false} />
       </mesh>
-      <AimedSpot position={[1.25, 2.2, BACK + 0.15]} aim={[0.5, 0, 0.6]} angle={0.7} penumbra={0.9} intensity={22} distance={6} color="#4d8be0" />
+      <AimedSpot position={[WINDOW_X, 2.2, BACK + 0.15]} aim={[WINDOW_X - 0.75, 0, 0.6]} angle={0.7} penumbra={0.9} intensity={22} distance={6} color="#4d8be0" />
 
       {/* ---- bucket (with a puddle) ---- */}
       <mesh position={[-1.55, 0.16, 1.0]}>
