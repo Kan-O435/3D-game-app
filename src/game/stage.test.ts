@@ -4,12 +4,12 @@ import { REROLL_COST, SHOP_SLOTS, STARTING_MONEY, TURNS_PER_STAGE, termsFor } fr
 const plain = { spinCostFactor: 1, dueFactor: 1 }
 
 describe('stage terms', () => {
-  it('due grows 28, 46, 72, 106', () => {
-    expect([1, 2, 3, 4].map((s) => termsFor(s, plain).due)).toEqual([28, 46, 72, 106])
+  it('due grows 32, 50, 76, 110', () => {
+    expect([1, 2, 3, 4].map((s) => termsFor(s, plain).due)).toEqual([32, 50, 76, 110])
   })
 
-  it('performance needed grows every second stage', () => {
-    expect([1, 2, 3, 4, 5, 7].map((s) => termsFor(s, plain).perfNeeded)).toEqual([3, 3, 4, 4, 5, 6])
+  it('performance needed grows by one each stage', () => {
+    expect([1, 2, 3, 4, 5, 7].map((s) => termsFor(s, plain).perfNeeded)).toEqual([7, 8, 9, 10, 11, 13])
   })
 
   it('spin cost steps up every third stage', () => {
@@ -17,7 +17,7 @@ describe('stage terms', () => {
   })
 
   it('charm factors apply, and the spin fee never drops below 1', () => {
-    expect(termsFor(2, { spinCostFactor: 1, dueFactor: 0.85 }).due).toBe(39)
+    expect(termsFor(2, { spinCostFactor: 1, dueFactor: 0.85 }).due).toBe(43)
     expect(termsFor(1, { spinCostFactor: 0.1, dueFactor: 1 }).spinCost).toBe(1)
   })
 

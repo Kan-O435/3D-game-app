@@ -66,7 +66,7 @@ export const CHARMS: readonly CharmDef[] = [
     id: 'rusty-key',
     name: '握手券の束',
     description: '低位シンボルが出やすくなる',
-    price: 20,
+    price: 25,
     apply: (m) => boost(m, range(0, 4), 3),
   },
   {
@@ -80,21 +80,21 @@ export const CHARMS: readonly CharmDef[] = [
     id: 'pity-coin',
     name: 'チェキ券',
     description: '外れたスピンでも +5 コイン',
-    price: 80,
+    price: 55,
     apply: (m) => void (m.consolation += 5),
   },
   {
     id: 'silver-tooth',
     name: 'ファンレター',
     description: '当たりのラインごとに +5 コイン',
-    price: 40,
+    price: 75,
     apply: (m) => void (m.winBonus += 5),
   },
   {
     id: 'skull-ring',
     name: 'ファンサうちわ',
     description: '4個以上揃いの配当が 2.5 倍',
-    price: 35,
+    price: 28,
     apply: (m) => void (m.longMatchMultiplier *= 2.5),
   },
   {
