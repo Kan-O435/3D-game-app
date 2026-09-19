@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import {
   spin as drawGrid,
   findLineWins,
+  BASE_PATTERN_IDS,
   computePayout,
   resolveModifiers,
   drawShopOffer,
@@ -68,7 +69,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     playSpinStart()
     const mods = resolveModifiers(charms)
     const grid = drawGrid(Math.random, mods.weightBoosts)
-    const lastWins = findLineWins(grid)
+    const lastWins = findLineWins(grid, [...BASE_PATTERN_IDS, ...mods.extraPatterns])
     // The result is decided now, but stays hidden (see ReelGrid's roll
     // animation) until the reels visually stop and call finishSpin().
     // The turn is spent up front; the payout is only banked in finishSpin().

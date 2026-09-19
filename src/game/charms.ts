@@ -16,6 +16,8 @@ export interface Modifiers {
   longMatchMultiplier: number
   // Coins granted when a stage is cleared.
   clearBonus: number
+  // Pattern ids (see paylines.ts) unlocked on top of the base rows.
+  extraPatterns: string[]
 }
 
 export interface CharmDef {
@@ -94,6 +96,20 @@ export const CHARMS: readonly CharmDef[] = [
     price: 10,
     apply: (m) => void (m.clearBonus += 6),
   },
+  {
+    id: 'v-scar',
+    name: '裂け目',
+    description: 'V字・逆V字のラインでも当たる',
+    price: 22,
+    apply: (m) => void m.extraPatterns.push('v', 'inv-v'),
+  },
+  {
+    id: 'crooked-blade',
+    name: '歪んだ刃',
+    description: '斜めのラインでも当たる',
+    price: 22,
+    apply: (m) => void m.extraPatterns.push('diag-down', 'diag-up'),
+  },
 ]
 
 export function findCharm(id: string): CharmDef | undefined {
@@ -109,6 +125,7 @@ export function resolveModifiers(ownedIds: readonly string[]): Modifiers {
     consolation: 0,
     longMatchMultiplier: 1,
     clearBonus: 0,
+    extraPatterns: [],
   }
   for (const id of ownedIds) findCharm(id)?.apply(m)
   return m

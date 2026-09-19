@@ -47,9 +47,7 @@ export function ReelGrid({ position }: ReelGridProps) {
     const cells = new Set<number>()
     if (!isSpinning) {
       for (const win of lastWins) {
-        for (let col = 0; col < win.matchLength; col++) {
-          cells.add(win.row * COLUMNS + col)
-        }
+        for (const cell of win.cells) cells.add(cell)
       }
     }
     return cells
