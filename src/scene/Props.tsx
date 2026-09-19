@@ -118,7 +118,7 @@ export function Props() {
       </group>
       <pointLight position={[ROOM.minX + 1.4, 2.4, 0.4]} color="#ffe2b0" intensity={4} distance={5} />
 
-      {/* ---- right wall: the merch counter — sign, board of slips, monitor, desk buttons ---- */}
+      {/* ---- right wall: the exchange counter — sign, board of slips, monitor, desk buttons ---- */}
       <mesh position={[ROOM.maxX - 0.5, 0.45, -0.5]}>
         <boxGeometry args={[1.0, 0.9, 2.4]} />
         <meshStandardMaterial map={crate} roughness={1} />

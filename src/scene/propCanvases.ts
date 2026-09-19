@@ -30,38 +30,38 @@ function paper(width: number, height: number, base: string, seed: number) {
   return { canvas, ctx }
 }
 
-/** The stage plan pinned to the left wall (numbers live in the DOM sheet). */
+/** The stage order pinned to the left wall (numbers live in the DOM sheet). */
 export function workOrderCanvas() {
   const { canvas, ctx } = paper(110, 148, '#ddd4bb', 41)
-  text(ctx, 'OSHI PLAN', 55, 15, 13, '#231d16', 'center')
+  text(ctx, 'WORK ORDER', 55, 15, 13, '#231d16', 'center')
   ctx.fillStyle = '#231d16'
   ctx.fillRect(8, 26, 94, 1)
-  text(ctx, 'RE: LIVE TICKETS', 55, 37, 8, '#4a3f30', 'center')
-  const rows = ['TICKETS', 'HEAT', 'DAYS', 'SPIN FEE']
+  text(ctx, 'RE: QUOTA MUST BE MET', 55, 37, 8, '#4a3f30', 'center')
+  const rows = ['DUE', 'PERFORMANCE', 'TURNS', 'SPIN FEE']
   rows.forEach((label, i) => {
     const y = 52 + i * 17
     text(ctx, label, 10, y, 9, '#231d16')
     ctx.fillStyle = '#a3231b'
     ctx.fillRect(66, y + 5, 34, 2) // the blank the number goes on
   })
-  text(ctx, 'FOR OSHI.', 10, 133, 10, '#a3231b')
+  text(ctx, 'COMPLY.', 10, 133, 10, '#a3231b')
   // a red approval stamp
   ctx.strokeStyle = 'rgba(163,35,27,0.85)'
   ctx.lineWidth = 2
   ctx.beginPath()
   ctx.arc(86, 130, 13, 0, Math.PI * 2)
   ctx.stroke()
-  text(ctx, 'GO!', 86, 130, 10, 'rgba(163,35,27,0.9)', 'center')
+  text(ctx, 'OK', 86, 130, 11, 'rgba(163,35,27,0.9)', 'center')
   return canvas
 }
 
 /** The rules sheet next to it. */
 export function rulesCanvas() {
   const { canvas, ctx } = paper(84, 128, '#c9c1a8', 43)
-  text(ctx, 'FAN RULES', 42, 12, 10, '#231d16', 'center')
+  text(ctx, 'STANDARDS', 42, 12, 10, '#231d16', 'center')
   ctx.fillStyle = '#231d16'
   ctx.fillRect(6, 20, 72, 1)
-  ;['1 SPIN = 1 DAY', 'MATCH FROM LEFT', 'W  = OSHI (ANY)', '*  = 3+ ANYWHERE', 'FLAME x3 = LOSS', 'ALL FOR OSHI.'].forEach((line, i) => {
+  ;['1 SPIN = 1 TURN', 'MATCH FROM LEFT', 'W  = ANY SYMBOL', '*  = 3+ ANYWHERE', 'FLAME x3 = LOSS', 'PAY OR ELSE.'].forEach((line, i) => {
     text(ctx, line, 7, 32 + i * 14, 7, i === 5 ? '#a3231b' : '#3a3024')
   })
   return canvas
@@ -112,7 +112,7 @@ export function slipsBoardCanvas() {
   return canvas
 }
 
-/** The lit sign over the merch counter. */
+/** The lit sign over the exchange counter. */
 export function exchangeSignCanvas() {
   const { canvas, ctx } = makeCanvas(128, 24)
   ctx.fillStyle = '#08130d'
@@ -121,18 +121,18 @@ export function exchangeSignCanvas() {
   ctx.strokeRect(1.5, 1.5, 125, 21)
   ctx.shadowColor = '#7dffb0'
   ctx.shadowBlur = 4
-  text(ctx, 'MERCH', 64, 13, 15, '#8dffbe', 'center')
+  text(ctx, 'EXCHANGE', 64, 13, 15, '#8dffbe', 'center')
   return canvas
 }
 
-/** The little green CRT on the merch counter. */
+/** The little green CRT on the counter. */
 export function monitorCanvas() {
   const { canvas, ctx } = makeCanvas(72, 56)
   ctx.fillStyle = '#05140a'
   ctx.fillRect(0, 0, 72, 56)
   ctx.shadowColor = '#5dff8f'
   ctx.shadowBlur = 3
-  text(ctx, 'MERCH', 36, 10, 10, '#7dffa5', 'center')
+  text(ctx, 'EXCHANGE', 36, 10, 10, '#7dffa5', 'center')
   ctx.fillStyle = '#3aa85f'
   ctx.fillRect(6, 18, 60, 1)
   text(ctx, 'BALANCE', 8, 28, 9, '#7dffa5')
