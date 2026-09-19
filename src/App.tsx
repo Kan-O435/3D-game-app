@@ -7,6 +7,7 @@ import { Radio } from './ui/Radio'
 import { PayPrompt } from './ui/PayPrompt'
 import { SpinHint } from './ui/SpinHint'
 import { GameOverScreen } from './ui/GameOverScreen'
+import { ClearScreen } from './ui/ClearScreen'
 import { Shop } from './ui/Shop'
 import { OrderSheet } from './ui/OrderSheet'
 import { PayoutTable } from './ui/PayoutTable'
@@ -39,6 +40,7 @@ export default function App() {
       <OrderSheet />
       <Shop />
       <GameOverScreen />
+      <ClearScreen />
       <Hotkeys />
     </div>
   )

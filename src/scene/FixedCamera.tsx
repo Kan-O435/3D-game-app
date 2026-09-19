@@ -19,7 +19,8 @@ const STATIONS = {
 } satisfies Record<string, Pose>
 
 function stationFor(status: GameStatus): keyof typeof STATIONS {
-  if (status === 'briefing') return 'order'
+  // Dying sends you back to the order sheet (the receipt is laid over it).
+  if (status === 'briefing' || status === 'gameOver') return 'order'
   if (status === 'shop') return 'shop'
   return 'machine'
 }
