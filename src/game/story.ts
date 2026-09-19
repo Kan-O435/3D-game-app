@@ -1,14 +1,14 @@
-// The game's fiction, told deadpan: the paperwork is perfectly ordinary, but the
-// event each stage is saving up for is an idol's (地下ライブ ... 武道館 ... ドーム).
+// The game's fiction, told deadpan: the paperwork is perfectly ordinary, but what
+// each stage is saving up for is a fan's ladder — first enough for the お話会
+// (talk event), then a 2ショット, then a live show, and onwards to the dome.
 // Text only — no game rules live here, so wording can be changed freely.
 
 const STAGE_NAMES = [
-  '地下ライブ',
-  'ミニライブ',
-  '握手会',
+  'お話会', // first goal: enough for the talk event
+  '2ショット', // then the two-shot photo
+  'ライブ', // then finally a live show
   'ワンマンライブ',
   'ホールツアー',
-  'アリーナ公演',
   '武道館',
   'ドーム公演',
   '全国ドームツアー',
