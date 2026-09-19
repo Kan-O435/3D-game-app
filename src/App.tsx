@@ -3,6 +3,8 @@ import { Scene } from './scene/Scene'
 import { MuteButton } from './ui/MuteButton'
 import { CharmList } from './ui/CharmList'
 import { Callouts } from './ui/Callouts'
+import { Radio } from './ui/Radio'
+import { PayPrompt } from './ui/PayPrompt'
 import { GameOverScreen } from './ui/GameOverScreen'
 import { Shop } from './ui/Shop'
 import { OrderSheet } from './ui/OrderSheet'
@@ -22,6 +24,8 @@ export default function App() {
       </Canvas>
       <CharmList />
       <Callouts />
+      <PayPrompt />
+      <Radio />
       <PayoutTable />
       <MuteButton />
       <OrderSheet />

@@ -191,3 +191,30 @@ canvas {
   0%, 18%, 22%, 62%, 66%, 100% { opacity: 1; }
   20%, 64% { opacity: 0.55; }
 }
+
+/* Radio caption (src/ui/Radio.tsx): fades in, holds, fades out. */
+.radio-line {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  max-width: min(760px, 92vw);
+  padding: 6px 14px;
+  background: rgba(0, 0, 0, 0.72);
+  border-left: 3px solid #d63a2b;
+  color: #f3ecdc;
+  font-size: 15px;
+  line-height: 1.5;
+  pointer-events: none;
+  animation: radio-life 6.5s ease-out forwards;
+}
+@keyframes radio-life {
+  0% { opacity: 0; transform: translate(-50%, 6px); }
+  6% { opacity: 1; transform: translate(-50%, 0); }
+  88% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* The early-pay button waves a little so it's noticed. */
+.pay-prompt { animation: pay-bob 1.2s ease-in-out infinite; }
+@keyframes pay-bob { 50% { transform: translateY(-4px); } }
