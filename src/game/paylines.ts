@@ -35,33 +35,42 @@ export interface LineWin {
   // Grid indices (row-major) of the matched cells, so callers can highlight
   // them without knowing the pattern's shape.
   cells: number[]
+  // Column the run starts at (0 = touching the left edge).
+  startCol: number
   // May be fractional (pattern factor); computePayout rounds the spin total.
   payout: number
   // Performance points this win earns (see symbols.ts `perf`); 0 for scatters.
   perf: number
 }
 
-// Classic left-to-right slot rule: a win is a run of the same symbol starting
-// at column 0 along a pattern, at least MIN_MATCH long.
-// 2 (not 3) because with 15 symbols a 3-run only hits ~3% of spins, which
-// makes a turn-limited debt-payment game pure luck — see docs/NOTES.md.
-const MIN_MATCH = 2
+// What counts as a win: a run of one symbol along a pattern. A run touching
+// either edge of the grid (starting at column 0 or reaching the last column)
+// pays from MIN_MATCH_EDGE = 2 in a row; a run in the middle needs
+// MIN_MATCH_MID = 3. So it's judged from both the left AND the right, and a
+// 3-run counts anywhere. (It used to be "from column 0 only", which hit just
+// ~27% of spins with 13 ordinary symbols in play — ~48% now; see docs/NOTES.md.)
+const MIN_MATCH_EDGE = 2
+const MIN_MATCH_MID = 3
 
-// Longer runs pay progressively more than a flat per-cell rate. Tuned by
-// simulation together with src/game/stage.ts's payment curve (median run clears
-// ~4 stages); still not final balance.
+// Longer runs pay progressively more than a flat per-cell rate. Roughly half
+// what they were when only left-anchored runs counted: now that ~50% of spins
+// pay (was ~33%), this keeps the average spin worth about the same (~9 coins).
+// Tuned by simulation together with src/game/stage.ts; still not final balance.
 const MATCH_MULTIPLIER: Readonly<Record<number, number>> = {
-  2: 1.5,
-  3: 4.5,
-  4: 15,
-  5: 45,
+  2: 0.7,
+  3: 2.2,
+  4: 7,
+  5: 21,
 }
 
 function payoutFor(symbolId: number, matchLength: number, factors: ValueFactors = {}): number {
   const symbol = SYMBOLS.find((s) => s.id === symbolId)
   if (!symbol) throw new Error(`Unknown symbol id: ${symbolId}`)
   // `factors` is the drifting symbol values (see drift.ts); missing = unchanged.
-  return symbol.payout * (factors[symbolId] ?? 1) * (MATCH_MULTIPLIER[matchLength] ?? 0)
+  const raw = symbol.payout * (factors[symbolId] ?? 1) * (MATCH_MULTIPLIER[matchLength] ?? 0)
+  // Round to hundredths so float noise (100 * 2.2 = 220.00000000000003) never
+  // reaches the payout table or a total.
+  return Math.round(raw * 100) / 100
 }
 
 // Scatter payout by how many scatters are on the grid (3 minimum; more than 5
@@ -82,14 +91,14 @@ function perfFor(symbolId: number, matchLength: number): number {
 
 const KIND_BY_ID = new Map(SYMBOLS.map((s) => [s.id, s.kind]))
 
-// Walks one pattern from column 0. Wilds extend a run of whatever normal
-// symbol shows up first (so W,W,A,A,B is a 4-run of A); a scatter, a curse or a
-// different normal symbol ends it. A run of only wilds pays as the wild.
-function winOnPattern(grid: Grid, pattern: Pattern, factors: ValueFactors): LineWin | null {
+// The run that begins at `start` along a pattern. Wilds extend a run of whatever
+// normal symbol shows up first (so W,W,A,A,B is a 4-run of A); a scatter, a curse
+// or a different normal symbol ends it. A run of only wilds has base === null.
+function runFrom(grid: Grid, pattern: Pattern, start: number): { base: number | null; length: number } {
   let base: number | null = null
   let length = 0
 
-  for (let col = 0; col < COLUMNS; col++) {
+  for (let col = start; col < COLUMNS; col++) {
     const id = cellAt(grid, col, pattern.rows[col])
     const kind = KIND_BY_ID.get(id)
     if (kind === 'scatter' || kind === 'curse') break
@@ -99,17 +108,37 @@ function winOnPattern(grid: Grid, pattern: Pattern, factors: ValueFactors): Line
     }
     length++
   }
+  return { base, length }
+}
 
-  if (length < MIN_MATCH) return null
-  const symbolId = base ?? WILD_ID
-  return {
-    patternId: pattern.id,
-    symbolId,
-    matchLength: length,
-    cells: pattern.rows.slice(0, length).map((row, col) => row * COLUMNS + col),
-    payout: payoutFor(symbolId, length, factors) * pattern.payoutFactor,
-    perf: perfFor(symbolId, length),
+// Scans one pattern left to right for winning runs. Runs don't overlap: once one
+// is taken the scan resumes after it, so a row like A,A,A,B,B is two wins (a
+// 3-run of A and a 2-run of B touching the right edge). A run of only wilds pays
+// as the wild.
+function winsOnPattern(grid: Grid, pattern: Pattern, factors: ValueFactors): LineWin[] {
+  const wins: LineWin[] = []
+  let start = 0
+
+  while (start < COLUMNS) {
+    const { base, length } = runFrom(grid, pattern, start)
+    const touchesEdge = start === 0 || start + length === COLUMNS
+    if (length >= (touchesEdge ? MIN_MATCH_EDGE : MIN_MATCH_MID)) {
+      const symbolId = base ?? WILD_ID
+      wins.push({
+        patternId: pattern.id,
+        symbolId,
+        matchLength: length,
+        cells: pattern.rows.slice(start, start + length).map((row, i) => row * COLUMNS + start + i),
+        startCol: start,
+        payout: payoutFor(symbolId, length, factors) * pattern.payoutFactor,
+        perf: perfFor(symbolId, length),
+      })
+      start += length
+    } else {
+      start += 1
+    }
   }
+  return wins
 }
 
 // Scatters pay wherever they land, independent of any pattern, so this part
@@ -122,6 +151,7 @@ function scatterWin(grid: Grid): LineWin | null {
     symbolId: SCATTER_ID,
     matchLength: cells.length,
     cells,
+    startCol: 0,
     payout: SCATTER_PAYOUT[Math.min(cells.length, 5)],
     perf: 0,
   }
@@ -136,8 +166,7 @@ export function findLineWins(
 
   for (const pattern of PATTERNS) {
     if (!activePatternIds.includes(pattern.id)) continue
-    const win = winOnPattern(grid, pattern, valueFactors)
-    if (win) wins.push(win)
+    wins.push(...winsOnPattern(grid, pattern, valueFactors))
   }
 
   const scatter = scatterWin(grid)
@@ -156,7 +185,7 @@ export const RATE_LIMIT_COUNT = 3
 export function findRateLimit(grid: Grid): LineWin | null {
   const cells = grid.flatMap((id, i) => (id === CURSE_ID ? [i] : []))
   if (cells.length < RATE_LIMIT_COUNT) return null
-  return { patternId: 'rate-limit', symbolId: CURSE_ID, matchLength: cells.length, cells, payout: 0, perf: 0 }
+  return { patternId: 'rate-limit', symbolId: CURSE_ID, matchLength: cells.length, cells, startCol: 0, payout: 0, perf: 0 }
 }
 
 export function totalPayout(wins: readonly LineWin[]): number {

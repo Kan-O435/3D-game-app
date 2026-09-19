@@ -17,6 +17,7 @@ const win = (matchLength: number, payout: number, perf = 0): LineWin => ({
   symbolId: 0,
   matchLength,
   cells: [],
+  startCol: 0,
   payout,
   perf,
 })
@@ -25,10 +26,11 @@ const scatter = (count: number, payout: number): LineWin => ({
   symbolId: SCATTER_ID,
   matchLength: count,
   cells: [],
+  startCol: 0,
   payout,
   perf: 0,
 })
-const rateLimit: LineWin = { patternId: 'rate-limit', symbolId: CURSE_ID, matchLength: 3, cells: [], payout: 0, perf: 0 }
+const rateLimit: LineWin = { patternId: 'rate-limit', symbolId: CURSE_ID, matchLength: 3, cells: [], startCol: 0, payout: 0, perf: 0 }
 const mods = (...ids: string[]) => resolveModifiers(ids)
 
 describe('charm catalogue', () => {

@@ -67,10 +67,50 @@ describe('patterns', () => {
     expect(win.cells).toEqual([0, 6, 12, 8, 4])
   })
 
-  it('needs the run to start on column 0', () => {
-    const grid = blank()
-    ;[1, 2, 3].forEach((c) => (grid[c] = 4))
-    expect(findLineWins(grid).filter((w) => w.patternId === 'row-0')).toEqual([])
+  it('a run touching the left edge pays from 2', () => {
+    const [win] = rowWins([A, A, 4, 6, 8])
+    expect(win).toMatchObject({ matchLength: 2, startCol: 0 })
+    expect(win.cells).toEqual([5, 6])
+  })
+
+  it('a run touching the right edge pays from 2 too (judged from both sides)', () => {
+    const wins = rowWins([4, 6, 8, A, A])
+    expect(wins).toHaveLength(1)
+    expect(wins[0]).toMatchObject({ symbolId: A, matchLength: 2, startCol: 3 })
+    expect(wins[0].cells).toEqual([8, 9])
+  })
+
+  it('a run in the middle needs 3', () => {
+    expect(rowWins([4, A, A, 8, 6])).toEqual([])
+    const [win] = rowWins([4, A, A, A, 8])
+    expect(win).toMatchObject({ matchLength: 3, startCol: 1 })
+    expect(win.cells).toEqual([6, 7, 8])
+  })
+
+  it('a run that starts after column 0 but reaches the right edge is one long win', () => {
+    const wins = rowWins([4, A, A, A, A])
+    expect(wins).toHaveLength(1)
+    expect(wins[0]).toMatchObject({ matchLength: 4, startCol: 1 })
+  })
+
+  it('finds two separate wins in one row', () => {
+    const wins = rowWins([A, A, A, B, B])
+    expect(wins.map((w) => [w.symbolId, w.matchLength, w.startCol])).toEqual([
+      [A, 3, 0],
+      [B, 2, 3],
+    ])
+  })
+
+  it('does not double-count: runs never overlap', () => {
+    const wins = rowWins([A, A, A, A, A])
+    expect(wins).toHaveLength(1)
+    expect(wins[0].matchLength).toBe(5)
+    const cells = findLineWins(middleRow([A, A, B, B, B]), ['row-1']).flatMap((w) => w.cells)
+    expect(new Set(cells).size).toBe(cells.length)
+  })
+
+  it('a lone symbol, or two apart, is nothing', () => {
+    expect(rowWins([A, 4, A, 6, A])).toEqual([])
   })
 
   it('pays extra patterns at their payoutFactor', () => {
@@ -103,6 +143,11 @@ describe('wild', () => {
     expect(win).toMatchObject({ symbolId: A, matchLength: 4 })
   })
 
+  it('a wild can complete a right-edge run', () => {
+    const [win] = rowWins([4, 6, 8, W, A])
+    expect(win).toMatchObject({ symbolId: A, matchLength: 2, startCol: 3 })
+  })
+
   it('a different symbol ends the run even after a wild', () => {
     const [win] = rowWins([W, A, B, B, B])
     expect(win).toMatchObject({ symbolId: A, matchLength: 2 })
@@ -111,7 +156,7 @@ describe('wild', () => {
   it('an all-wild run pays as the wild', () => {
     const [win] = rowWins([W, W, W, W, W])
     expect(win).toMatchObject({ symbolId: W, matchLength: 5 })
-    expect(win.payout).toBe(symbolDef(W).payout * 45)
+    expect(win.payout).toBe(symbolDef(W).payout * 21)
   })
 
   it('never bridges a scatter or a curse', () => {
@@ -128,9 +173,14 @@ describe('scatter', () => {
   }
   const scatterWin = (grid: number[]) => findLineWins(grid, []).find((w) => w.patternId === 'scatter')
 
-  it('breaks a run, and a line starting on one never wins', () => {
-    expect(rowWins([A, A, SCATTER_ID, A, A])[0].matchLength).toBe(2)
-    expect(rowWins([SCATTER_ID, A, A, A, A])).toEqual([])
+  it('breaks a run: the two halves are judged separately, and it never joins one', () => {
+    const wins = rowWins([A, A, SCATTER_ID, A, A])
+    expect(wins.map((w) => [w.matchLength, w.startCol])).toEqual([
+      [2, 0],
+      [2, 3],
+    ])
+    const [win] = rowWins([SCATTER_ID, A, A, A, A])
+    expect(win).toMatchObject({ symbolId: A, matchLength: 4, startCol: 1 })
   })
 
   it('needs 3 anywhere on the grid', () => {
@@ -176,9 +226,12 @@ describe('curse / rate limit', () => {
   })
 
   it('never joins a run and wild does not bridge it', () => {
-    expect(rowWins([CURSE_ID, A, A, A, A])).toEqual([])
-    expect(rowWins([A, A, CURSE_ID, A, A])[0].matchLength).toBe(2)
-    expect(rowWins([A, WILD_ID, CURSE_ID, A, A])[0].matchLength).toBe(2)
+    expect(rowWins([CURSE_ID, A, A, A, A])[0]).toMatchObject({ matchLength: 4, startCol: 1 })
+    expect(rowWins([A, A, CURSE_ID, A, A]).map((w) => w.matchLength)).toEqual([2, 2])
+    expect(rowWins([A, WILD_ID, CURSE_ID, A, A]).map((w) => [w.symbolId, w.matchLength])).toEqual([
+      [A, 2],
+      [A, 2],
+    ])
   })
 
   it('is decided by the store, not by findLineWins', () => {
@@ -224,9 +277,18 @@ describe('payout table', () => {
     const table = payoutTable()
     const common = table.find((r) => r.symbolIds.includes(0))!
     expect(common.lengths[0]).toBe(2)
-    expect(common.payouts[0]).toBe(symbolDef(0).payout * 1.5)
+    expect(common.payouts[0]).toBe(symbolDef(0).payout * 0.7)
     expect(table.find((r) => r.kind === 'scatter')!.payouts).toEqual([30, 100, 300])
     expect(table.find((r) => r.kind === 'curse')).toMatchObject({ lengths: [RATE_LIMIT_COUNT], payouts: [0] })
+  })
+
+  it('shows clean numbers — no float noise like 220.00000000000003', () => {
+    const cases: Record<number, number>[] = [{}, { 0: 1.5 }, { 3: 0.75, 8: 2 }]
+    for (const factors of cases) {
+      for (const row of payoutTable(factors)) {
+        for (const payout of row.payouts) expect(Math.round(payout * 100) / 100).toBe(payout)
+      }
+    }
   })
 
   it('splits a tier when only some symbols drifted, and scales the row', () => {
