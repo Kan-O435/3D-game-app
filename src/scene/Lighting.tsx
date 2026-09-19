@@ -2,9 +2,12 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Color, type Mesh, type MeshBasicMaterial, type PointLight, type SpotLight } from 'three'
 import { heartbeatBpm } from '../game'
+import { AimedSpot } from './AimedSpot'
 import { moodState } from './moodState'
 
-const BASE_SPOT_INTENSITY = 15
+const BASE_SPOT_INTENSITY = 30
+// Where the bare bulb hangs: high and to the left of the machine, like the reference.
+const BULB: [number, number, number] = [-1.15, 2.85, 1.3]
 const WARM = new Color('#ffe9c2')
 const RED = new Color('#ff3b24')
 
@@ -45,25 +48,28 @@ export function Lighting() {
 
   return (
     <>
-      <ambientLight intensity={0.15} color="#2a2a35" />
-      <spotLight
+      <ambientLight intensity={0.5} color="#3a4560" />
+      <AimedSpot
         ref={spot}
-        position={[0, 3.2, 1.2]}
-        angle={0.5}
-        penumbra={0.5}
+        position={BULB}
+        aim={[0.1, 1.1, 0]}
+        angle={0.62}
+        penumbra={0.7}
         intensity={BASE_SPOT_INTENSITY}
-        distance={10}
+        distance={12}
         color="#ffe9c2"
       />
       <pointLight ref={red} position={[0, 2.2, 2.2]} color="#ff2a1a" intensity={0} distance={8} />
+      {/* a low fill in front of the machine so its face never goes fully black */}
+      <pointLight position={[0.2, 1.5, 2.0]} color="#ffd9b0" intensity={2.2} distance={5} />
 
-      {/* the bulb itself + its cord up to the ceiling (room is 5 high) */}
-      <mesh ref={bulb} position={[0, 3.2, 1.2]}>
+      {/* the bulb itself + its cord up to the ceiling (room is 3.2 high) */}
+      <mesh ref={bulb} position={BULB}>
         <sphereGeometry args={[0.07, 16, 16]} />
         <meshBasicMaterial color="#ffe9c2" />
       </mesh>
-      <mesh position={[0, 4.1, 1.2]}>
-        <cylinderGeometry args={[0.006, 0.006, 1.8, 6]} />
+      <mesh position={[BULB[0], (BULB[1] + 3.2) / 2, BULB[2]]}>
+        <cylinderGeometry args={[0.006, 0.006, 3.2 - BULB[1], 6]} />
         <meshBasicMaterial color="#0a0808" />
       </mesh>
     </>
