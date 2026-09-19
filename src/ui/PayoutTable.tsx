@@ -57,13 +57,13 @@ export function PayoutTable() {
                     {row.factor > 1 ? '▲' : '▼'}×{row.factor}
                   </b>
                 )}
-                {row.kind === 'wild' && <b style={{ color: '#f1c40f' }}>W ワイルド</b>}
-                {row.kind === 'scatter' && <b style={{ color: '#c77dff' }}>★ ボーナス</b>}
-                {row.kind === 'curse' && <b style={{ color: '#ff5a4a' }}>6 レートリミット</b>}
+                {row.kind === 'wild' && <b style={{ color: '#f1c40f' }}>W 推し</b>}
+                {row.kind === 'scatter' && <b style={{ color: '#c77dff' }}>★ ファンサ</b>}
+                {row.kind === 'curse' && <b style={{ color: '#ff5a4a' }}>炎上</b>}
               </td>
               {row.kind === 'curse' ? (
                 <td colSpan={LENGTHS.length + 1} style={{ padding: '0 6px', color: '#ff8a7a' }}>
-                  3個以上で獲得を全没収
+                  3個以上で今回の獲得を全没収
                 </td>
               ) : (
                 <>

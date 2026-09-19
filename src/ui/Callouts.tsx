@@ -3,7 +3,7 @@ import { useGameStore } from '../store/gameStore'
 import { symbolColor } from '../scene/icons'
 import { winTier } from './winTier'
 
-// Result banners: WIN / BIG WIN / JACKPOT by size, the red RATE LIMIT, and the
+// Result banners: WIN / BIG WIN / JACKPOT by size, the red 炎上 (the rate limit), and the
 // "相場変動" note when a symbol's value drifts. All are keyed per result so the
 // CSS animation replays each spin, and only appear once the reels have stopped
 // (same moment the money display starts rolling).
@@ -44,7 +44,7 @@ export function Callouts() {
 
       {rateLimited && (
         <div key={`limit-${key}`} className="win-banner limit">
-          <span className="win-title">RATE LIMIT</span>
+          <span className="win-title">炎上!!</span>
           <span className="win-amount">今回の獲得は全没収</span>
         </div>
       )}
