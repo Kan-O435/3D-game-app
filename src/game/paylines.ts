@@ -1,5 +1,6 @@
 import { COLUMNS } from './layout'
 import { cellAt, type Grid } from './spin'
+import type { ValueFactors } from './drift'
 import { CURSE_ID, SCATTER_ID, SYMBOLS, WILD_ID, type SymbolKind } from './symbols'
 
 // A payline is one row index per column: [1,1,1,1,1] is the middle row,
@@ -56,10 +57,11 @@ const MATCH_MULTIPLIER: Readonly<Record<number, number>> = {
   5: 45,
 }
 
-function payoutFor(symbolId: number, matchLength: number): number {
+function payoutFor(symbolId: number, matchLength: number, factors: ValueFactors = {}): number {
   const symbol = SYMBOLS.find((s) => s.id === symbolId)
   if (!symbol) throw new Error(`Unknown symbol id: ${symbolId}`)
-  return symbol.payout * (MATCH_MULTIPLIER[matchLength] ?? 0)
+  // `factors` is the drifting symbol values (see drift.ts); missing = unchanged.
+  return symbol.payout * (factors[symbolId] ?? 1) * (MATCH_MULTIPLIER[matchLength] ?? 0)
 }
 
 // Scatter payout by how many scatters are on the grid (3 minimum; more than 5
@@ -83,7 +85,7 @@ const KIND_BY_ID = new Map(SYMBOLS.map((s) => [s.id, s.kind]))
 // Walks one pattern from column 0. Wilds extend a run of whatever normal
 // symbol shows up first (so W,W,A,A,B is a 4-run of A); a scatter, a curse or a
 // different normal symbol ends it. A run of only wilds pays as the wild.
-function winOnPattern(grid: Grid, pattern: Pattern): LineWin | null {
+function winOnPattern(grid: Grid, pattern: Pattern, factors: ValueFactors): LineWin | null {
   let base: number | null = null
   let length = 0
 
@@ -105,7 +107,7 @@ function winOnPattern(grid: Grid, pattern: Pattern): LineWin | null {
     symbolId,
     matchLength: length,
     cells: pattern.rows.slice(0, length).map((row, col) => row * COLUMNS + col),
-    payout: payoutFor(symbolId, length) * pattern.payoutFactor,
+    payout: payoutFor(symbolId, length, factors) * pattern.payoutFactor,
     perf: perfFor(symbolId, length),
   }
 }
@@ -128,12 +130,13 @@ function scatterWin(grid: Grid): LineWin | null {
 export function findLineWins(
   grid: Grid,
   activePatternIds: readonly string[] = BASE_PATTERN_IDS,
+  valueFactors: ValueFactors = {},
 ): LineWin[] {
   const wins: LineWin[] = []
 
   for (const pattern of PATTERNS) {
     if (!activePatternIds.includes(pattern.id)) continue
-    const win = winOnPattern(grid, pattern)
+    const win = winOnPattern(grid, pattern, valueFactors)
     if (win) wins.push(win)
   }
 
@@ -167,14 +170,18 @@ export interface PayoutRow {
   kind: SymbolKind
   symbolIds: number[]
   perf: number
+  // Drift factor for this row's symbols (1 = unchanged); rows split when the
+  // symbols of one payout tier drift differently.
+  factor: number
   lengths: number[]
   payouts: number[]
 }
 
-export function payoutTable(): PayoutRow[] {
+export function payoutTable(valueFactors: ValueFactors = {}): PayoutRow[] {
   const rows = new Map<string, PayoutRow>()
   for (const s of SYMBOLS) {
-    const key = s.kind === 'scatter' || s.kind === 'curse' ? s.kind : `${s.kind}-${s.payout}-${s.perf}`
+    const factor = valueFactors[s.id] ?? 1
+    const key = s.kind === 'scatter' || s.kind === 'curse' ? s.kind : `${s.kind}-${s.payout}-${s.perf}-${factor}`
     const existing = rows.get(key)
     if (existing) {
       existing.symbolIds.push(s.id)
@@ -185,8 +192,9 @@ export function payoutTable(): PayoutRow[] {
       kind: s.kind,
       symbolIds: [s.id],
       perf: s.perf,
+      factor,
       lengths,
-      payouts: lengths.map((n) => (s.kind === 'scatter' ? SCATTER_PAYOUT[n] : s.kind === 'curse' ? 0 : payoutFor(s.id, n))),
+      payouts: lengths.map((n) => (s.kind === 'scatter' ? SCATTER_PAYOUT[n] : s.kind === 'curse' ? 0 : payoutFor(s.id, n, valueFactors))),
     })
   }
   return [...rows.values()]

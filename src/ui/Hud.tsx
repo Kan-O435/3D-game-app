@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { WARNING_TURNS, findCharm } from '../game'
+import { symbolColor } from '../scene/icons'
 
 const panelStyle: CSSProperties = {
   position: 'absolute',
@@ -35,6 +36,7 @@ export function Hud() {
   const perfNeeded = useGameStore((s) => s.perfNeeded)
   const spinCost = useGameStore((s) => s.spinCost)
   const lastPerf = useGameStore((s) => s.lastPerf)
+  const lastDrift = useGameStore((s) => s.lastDrift)
   const rateLimited = useGameStore((s) => s.lastWins.some((w) => w.patternId === 'rate-limit'))
   const isPlaying = useGameStore((s) => s.status === 'playing')
   const stage = useGameStore((s) => s.stage)
@@ -120,6 +122,20 @@ export function Hud() {
 
       {/* Payout only shows once the reels have visibly stopped, matching when
           `money` itself updates. The key restarts the pop animation per result. */}
+      {!isSpinning && lastDrift && (
+        <div
+          key={`drift-${stage}-${turnsLeft}`}
+          className="hud-pop"
+          style={{ ...calloutStyle(lastDrift.factor > 1 ? '#7fd18b' : '#e07a6b', 20, '12%'), fontSize: 20 }}
+        >
+          相場変動
+          <span
+            style={{ display: 'inline-block', width: 14, height: 14, margin: '0 8px', background: symbolColor(lastDrift.symbolId) }}
+          />
+          {lastDrift.factor > 1 ? '▲' : '▼'} ×{lastDrift.factor}
+        </div>
+      )}
+
       {!isSpinning && rateLimited && (
         <div key={`limit-${stage}-${turnsLeft}`} className="hud-pop" style={calloutStyle('#ff5a4a', 40, '30%')}>
           RATE LIMIT

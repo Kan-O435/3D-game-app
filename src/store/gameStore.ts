@@ -17,8 +17,11 @@ import {
   WARNING_TURNS,
   SHOP_SLOTS,
   REROLL_COST,
+  rollDrift,
+  type Drift,
   type Grid,
   type LineWin,
+  type ValueFactors,
 } from '../game'
 import { playSpinStart, playWarning } from '../audio/audioEngine'
 
@@ -52,6 +55,10 @@ interface GameState {
   turnsLeft: number
   // What was paid at the last deadline (for the shop's header).
   lastPaid: number
+  // Drifting symbol values for this stage (symbolId -> factor; see game/drift.ts)
+  // and the change that just happened, for the HUD to announce.
+  valueFactors: ValueFactors
+  lastDrift: Drift | null
   // Owned charm ids (each can be owned once) and the current shop's stock.
   charms: string[]
   shopOffer: string[]
@@ -86,6 +93,8 @@ const freshRun = (status: GameStatus) => ({
   perf: 0,
   turnsLeft: TURNS_PER_STAGE,
   lastPaid: 0,
+  valueFactors: {} as ValueFactors,
+  lastDrift: null as Drift | null,
   charms: [] as string[],
   shopOffer: [] as string[],
 })
@@ -138,7 +147,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     else set({ status: 'playing' })
   },
   spin: () => {
-    const { isSpinning, status, turnsLeft, charms, money, spinCost } = get()
+    const { isSpinning, status, turnsLeft, charms, money, spinCost, valueFactors } = get()
     if (isSpinning || status !== 'playing' || turnsLeft <= 0 || money < spinCost) return
     playSpinStart()
     const mods = resolveModifiers(charms)
@@ -148,7 +157,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const rateLimit = mods.rateLimitImmune ? null : findRateLimit(grid)
     const lastWins = rateLimit
       ? [rateLimit]
-      : findLineWins(grid, [...BASE_PATTERN_IDS, ...mods.extraPatterns])
+      : findLineWins(grid, [...BASE_PATTERN_IDS, ...mods.extraPatterns], valueFactors)
     // The result is decided now, but stays hidden (see ReelGrid's roll
     // animation) until the reels visually stop and call finishSpin().
     // The turn and the fee are spent up front; the payout is only banked in
@@ -161,6 +170,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastPerf: computePerformance(lastWins, mods),
       money: money - spinCost,
       turnsLeft: turnsLeft - 1,
+      lastDrift: null,
     })
   },
   finishSpin: () => {
@@ -176,7 +186,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     // end the stage early; the order is settled on the last turn.)
     if (s.turnsLeft > 0 && !brokeEarly) {
       if (s.turnsLeft <= WARNING_TURNS) playWarning()
-      set({ isSpinning: false, money, perf })
+      // Symbol values may shift between spins (never on the deadline turn — the
+      // stage is over and they reset anyway).
+      const { factors, drift } = rollDrift(s.valueFactors)
+      set({ isSpinning: false, money, perf, valueFactors: factors, lastDrift: drift })
       return
     }
 
@@ -205,6 +218,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       status: 'briefing',
       shopOffer: [],
+      valueFactors: {},
+      lastDrift: null,
       turnsLeft: TURNS_PER_STAGE + resolveModifiers(charms).extraTurns,
     })
   },

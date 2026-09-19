@@ -10,7 +10,8 @@ const LENGTHS = [2, 3, 4, 5]
 // real payouts. Shown next to the machine while playing.
 export function PayoutTable() {
   const isPlaying = useGameStore((s) => s.status === 'playing')
-  const rows = useMemo(() => payoutTable(), [])
+  const valueFactors = useGameStore((s) => s.valueFactors)
+  const rows = useMemo(() => payoutTable(valueFactors), [valueFactors])
 
   if (!isPlaying) return null
 
@@ -45,7 +46,7 @@ export function PayoutTable() {
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.symbolIds.join('-')}>
+            <tr key={row.symbolIds.join('-')} style={row.factor !== 1 ? { color: row.factor > 1 ? '#7fd18b' : '#e07a6b' } : undefined}>
               <td style={{ paddingRight: 8 }}>
                 {row.kind === 'normal' &&
                   row.symbolIds.map((id) => (
@@ -54,6 +55,11 @@ export function PayoutTable() {
                       style={{ display: 'inline-block', width: 9, height: 9, marginRight: 2, background: symbolColor(id) }}
                     />
                   ))}
+                {row.kind === 'normal' && row.factor !== 1 && (
+                  <b style={{ marginLeft: 4 }}>
+                    {row.factor > 1 ? '▲' : '▼'}×{row.factor}
+                  </b>
+                )}
                 {row.kind === 'wild' && <b style={{ color: '#f1c40f' }}>W ワイルド</b>}
                 {row.kind === 'scatter' && <b style={{ color: '#c77dff' }}>★ ボーナス</b>}
                 {row.kind === 'curse' && <b style={{ color: '#ff5a4a' }}>6 レートリミット</b>}
