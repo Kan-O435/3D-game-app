@@ -27,28 +27,16 @@ export function GameOverScreen() {
         fontFamily: 'monospace',
       }}
     >
-      <div style={{ fontSize: 56, fontWeight: 800, letterSpacing: 6, color: '#c0392b' }}>GAME OVER</div>
+      <div className="neon" style={{ fontSize: 60, fontWeight: 900, letterSpacing: '0.15em', color: 'var(--led-red)', textShadow: '0 0 14px var(--led-red), 0 0 34px var(--cab-red)' }}>
+        GAME OVER
+      </div>
       <div style={{ fontSize: 20 }}>
         STAGE {stage}: {failReason === 'perf' ? '性能値が足りなかった' : '納付額が足りなかった'}
       </div>
       <div style={{ fontSize: 16, color: '#999' }}>
         COINS {money} / 納付 {due}　·　PERF {perf} / {perfNeeded} P
       </div>
-      <button
-        onClick={restart}
-        style={{
-          marginTop: 16,
-          padding: '12px 32px',
-          fontSize: 18,
-          fontWeight: 700,
-          letterSpacing: 2,
-          background: '#c0392b',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 8,
-          cursor: 'pointer',
-        }}
-      >
+      <button className="arcade-btn" onClick={restart} style={{ marginTop: 16 }}>
         RETRY
       </button>
     </div>

@@ -75,22 +75,7 @@ export function OrderSheet() {
           <b style={{ color: '#a3231b' }}>{spinCost} コイン/回</b>
         </div>
         <div style={{ marginTop: 10, color: '#a3231b', fontWeight: 700 }}>上記の通り命ずる。</div>
-        <button
-          onClick={acceptOrder}
-          style={{
-            marginTop: 16,
-            width: '100%',
-            padding: '12px 0',
-            fontSize: 18,
-            fontWeight: 700,
-            letterSpacing: 4,
-            background: '#a3231b',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 6,
-            cursor: 'pointer',
-          }}
-        >
+        <button className="arcade-btn" onClick={acceptOrder} style={{ marginTop: 16, width: '100%', fontSize: 16 }}>
           了解（台へ戻る）
         </button>
       </div>

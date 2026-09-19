@@ -1,4 +1,5 @@
 import { canSpend, useGameStore } from '../store/gameStore'
+import { LedNumber } from './LedNumber'
 import { findCharm, REROLL_COST } from '../game'
 
 // The exchange counter between stages. Reads/writes the store only; the store
@@ -20,16 +21,6 @@ export function Shop() {
 
   if (!isShop) return null
 
-  const bigButton = {
-    padding: '12px 28px',
-    fontSize: 16,
-    fontWeight: 700,
-    letterSpacing: 2,
-    color: '#fff',
-    border: 'none',
-    borderRadius: 8,
-  } as const
-
   return (
     <div
       className="fade-in"
@@ -48,14 +39,14 @@ export function Shop() {
         fontFamily: 'monospace',
       }}
     >
-      <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: 4, color: '#2ecc71' }}>
+      <div className="neon" style={{ fontSize: 30, fontWeight: 800, letterSpacing: '0.2em', color: 'var(--led-green)', textShadow: '0 0 12px var(--led-green)' }}>
         納付完了 −{lastPaid}
       </div>
-      <div style={{ fontSize: 18 }}>
-        COINS <span style={{ color: '#f1c40f' }}>{money}</span>
-        <span style={{ color: '#999' }}>
-          {' '}
-          / STAGE {stage}: 納付 {due} · {perfNeeded}P · スピン費 {spinCost}
+      <div className="slot-panel led-window" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '6px 16px' }}>
+        <span className="led-label">COINS</span>
+        <LedNumber value={money} digits={5} size={30} />
+        <span style={{ fontSize: 12, color: '#b8a685' }}>
+          STAGE {stage}：納付 {due} ・ {perfNeeded}P ・ スピン費 {spinCost}
         </span>
       </div>
 
@@ -83,10 +74,11 @@ export function Shop() {
                 gap: 10,
                 padding: '10px 12px',
                 textAlign: 'left',
-                background: bought ? '#1f3a29' : '#e8e1cd',
+                background: bought ? '#1f3a29' : 'linear-gradient(180deg, #f3ecd6, #e0d6b8)',
                 color: bought ? '#8fd6a5' : '#2a2622',
-                border: `2px solid ${bought ? '#2ecc71' : '#8d8571'}`,
+                border: `2px solid ${bought ? '#2ecc71' : 'var(--gold-dark)'}`,
                 borderRadius: 6,
+                boxShadow: bought ? '0 0 10px rgba(46,204,113,0.4)' : '0 3px 0 #6b4b06, 0 5px 10px rgba(0,0,0,0.5)',
                 opacity: !bought && !canAfford ? 0.5 : 1,
                 cursor: bought || !canAfford ? 'default' : 'pointer',
                 fontFamily: 'inherit',
@@ -108,18 +100,10 @@ export function Shop() {
 
       <div style={{ fontSize: 12, color: '#888' }}>※ スピン費（{spinCost}）を下回る買い物はできない</div>
       <div style={{ display: 'flex', gap: 14, marginTop: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
-        <button
-          onClick={rerollShop}
-          disabled={!canSpend({ money, spinCost }, REROLL_COST)}
-          style={{
-            ...bigButton,
-            background: !canSpend({ money, spinCost }, REROLL_COST) ? '#444' : '#5d6d7e',
-            cursor: !canSpend({ money, spinCost }, REROLL_COST) ? 'default' : 'pointer',
-          }}
-        >
-          品替え（−{REROLL_COST}）
+        <button className="arcade-btn gray" onClick={rerollShop} disabled={!canSpend({ money, spinCost }, REROLL_COST)}>
+          品替え<small>−{REROLL_COST} COINS</small>
         </button>
-        <button onClick={leaveShop} style={{ ...bigButton, background: '#c0392b', cursor: 'pointer' }}>
+        <button className="arcade-btn" onClick={leaveShop}>
           次のステージへ
         </button>
       </div>

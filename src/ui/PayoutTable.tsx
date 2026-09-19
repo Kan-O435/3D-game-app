@@ -17,24 +17,15 @@ export function PayoutTable() {
 
   return (
     <div
-      style={{
-        position: 'absolute',
-        left: 16,
-        bottom: 16,
-        padding: '8px 12px',
-        background: 'rgba(0, 0, 0, 0.65)',
-        border: '1px solid #555',
-        borderRadius: 8,
-        color: '#ccc',
-        fontFamily: 'monospace',
-        fontSize: 12,
-        pointerEvents: 'none',
-      }}
+      className="slot-panel"
+      style={{ position: 'absolute', left: 16, bottom: 16, padding: '8px 12px', fontSize: 12, pointerEvents: 'none' }}
     >
-      <div style={{ color: '#999', letterSpacing: 2, marginBottom: 4 }}>配当表</div>
+      <div style={{ color: 'var(--gold)', letterSpacing: '0.3em', marginBottom: 4, fontWeight: 800, textShadow: '0 0 8px var(--gold)' }}>
+        ◆ PAYOUT ◆
+      </div>
       <table style={{ borderCollapse: 'collapse' }}>
         <thead>
-          <tr style={{ color: '#888' }}>
+          <tr style={{ color: '#9a8466', borderBottom: '1px solid #3a2a1c' }}>
             <th style={{ textAlign: 'left', fontWeight: 400 }}>図柄</th>
             {LENGTHS.map((n) => (
               <th key={n} style={{ padding: '0 6px', fontWeight: 400 }}>
@@ -46,13 +37,19 @@ export function PayoutTable() {
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.symbolIds.join('-')} style={row.factor !== 1 ? { color: row.factor > 1 ? '#7fd18b' : '#e07a6b' } : undefined}>
+            <tr
+              key={row.symbolIds.join('-')}
+              style={{
+                color: row.factor > 1 ? '#7fd18b' : row.factor < 1 ? '#e07a6b' : 'var(--led-amber)',
+                textShadow: '0 0 6px currentColor',
+              }}
+            >
               <td style={{ paddingRight: 8 }}>
                 {row.kind === 'normal' &&
                   row.symbolIds.map((id) => (
                     <span
                       key={id}
-                      style={{ display: 'inline-block', width: 9, height: 9, marginRight: 2, background: symbolColor(id) }}
+                      style={{ display: 'inline-block', width: 10, height: 10, marginRight: 2, background: symbolColor(id), border: '1px solid rgba(255,255,255,0.35)', borderRadius: 2 }}
                     />
                   ))}
                 {row.kind === 'normal' && row.factor !== 1 && (
@@ -87,7 +84,7 @@ export function PayoutTable() {
           ))}
         </tbody>
       </table>
-      <div style={{ color: '#777', marginTop: 4 }}>★は 3・4・5個の枚数、どこでも可</div>
+      <div style={{ color: '#8a7a62', marginTop: 4, fontSize: 11 }}>★は 3・4・5個の枚数、どこでも可</div>
     </div>
   )
 }

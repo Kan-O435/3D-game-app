@@ -18,19 +18,6 @@ body {
   overflow: hidden;
 }
 
-/* HUD callouts (src/ui/Hud.tsx) — restarted by changing the element's key. */
-@keyframes hud-pop {
-  0% { opacity: 0; transform: translateY(12px) scale(0.8); }
-  15% { opacity: 1; transform: translateY(0) scale(1.15); }
-  30% { transform: scale(1); }
-  80% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-16px); }
-}
-
-.hud-pop {
-  animation: hud-pop 1.4s ease-out forwards;
-}
-
 /* Overlays that appear once the camera has settled on a station. */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -39,4 +26,231 @@ body {
 
 .fade-in {
   animation: fade-in 0.5s ease 0.9s both;
+}
+
+/* ------------------------------------------------------------------ */
+/* Slot-cabinet look for the DOM UI (docs/NOTES.md "UI restyle").      */
+/* Palette + shared pieces; the components only add layout on top.     */
+/* ------------------------------------------------------------------ */
+:root {
+  --gold: #f5c542;
+  --gold-dark: #8a6a12;
+  --cab-red: #d63a2b;
+  --cab-red-dark: #6e1a12;
+  --cab-black: #120d0a;
+  --led-amber: #ffb000;
+  --led-green: #39ff7a;
+  --led-red: #ff453a;
+  --led-blue: #4db8ff;
+  --mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Courier New', monospace;
+}
+
+/* A cabinet panel: dark body, gold trim, a little depth. */
+.slot-panel {
+  background: linear-gradient(180deg, #2b1510 0%, var(--cab-black) 100%);
+  border: 2px solid var(--gold-dark);
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px #000, inset 0 0 18px rgba(0, 0, 0, 0.8), 0 4px 18px rgba(0, 0, 0, 0.7);
+  color: #e8dcc8;
+  font-family: var(--mono);
+}
+
+/* The recessed black window a number sits in. */
+.led-window {
+  position: relative;
+  background: #030202;
+  border: 2px solid #3a2a1c;
+  border-radius: 6px;
+  box-shadow: inset 0 0 14px #000, 0 0 0 1px #6b5233;
+  padding: 4px 10px 6px;
+}
+
+.led-label {
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: #9a8466;
+}
+
+/* Glowing digits. Colour comes from --led on the element. */
+.led {
+  --led: var(--led-amber);
+  position: relative;
+  display: inline-block;
+  font-family: var(--mono);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--led);
+  text-shadow: 0 0 6px var(--led), 0 0 14px color-mix(in srgb, var(--led) 55%, transparent);
+}
+/* Unlit "8"s behind the value, like a seven-segment display. */
+.led-ghost {
+  position: absolute;
+  right: 0;
+  opacity: 0.12;
+  text-shadow: none;
+}
+
+/* A row of lit/unlit segments (progress). */
+.segbar { display: flex; gap: 2px; margin-top: 4px; }
+.segbar i {
+  flex: 1;
+  height: 6px;
+  border-radius: 1px;
+  background: #241a12;
+  box-shadow: inset 0 0 2px #000;
+}
+.segbar i.on { background: var(--seg, var(--led-amber)); box-shadow: 0 0 6px var(--seg, var(--led-amber)); }
+
+/* Round lamps: one per remaining turn. */
+.lamps { display: flex; flex-wrap: wrap; gap: 5px; padding-top: 3px; }
+.lamp {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #2a1610;
+  box-shadow: inset 0 0 3px #000, 0 0 0 1px #4a3626;
+}
+.lamp.on { background: radial-gradient(circle at 35% 30%, #fff3c4, var(--led-amber) 55%, #b36b00); box-shadow: 0 0 8px var(--led-amber); }
+.lamp.on.low { background: radial-gradient(circle at 35% 30%, #ffd0cb, var(--led-red) 55%, #9c1b14); box-shadow: 0 0 9px var(--led-red); animation: lamp-blink 0.7s steps(2, jump-none) infinite; }
+@keyframes lamp-blink { 50% { opacity: 0.45; } }
+
+/* Marquee: a plate flanked by chasing bulbs (src/ui/Marquee.tsx). */
+.marquee {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  pointer-events: none;
+}
+.marquee-plate {
+  padding: 5px 24px;
+  border: 2px solid var(--gold);
+  border-radius: 6px;
+  background: linear-gradient(180deg, #4a120c, #1e0705);
+  color: var(--gold);
+  font-family: var(--mono);
+  font-weight: 800;
+  letter-spacing: 0.35em;
+  text-shadow: 0 0 10px var(--gold);
+  box-shadow: 0 0 14px rgba(245, 197, 66, 0.35), inset 0 0 8px #000;
+}
+.bulbs { display: flex; gap: 7px; }
+.bulb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff8dc, #ffd66b 55%, #c98a00);
+  box-shadow: 0 0 8px var(--led-amber), 0 0 16px rgba(255, 138, 0, 0.5);
+  animation: bulb-chase 1.4s linear infinite;
+  animation-delay: calc(var(--i) * 0.14s);
+}
+@keyframes bulb-chase { 0%, 100% { opacity: 0.28; } 40%, 60% { opacity: 1; } }
+.marquee[data-state='spin'] .bulb { animation-duration: 0.4s; animation-delay: calc(var(--i) * 0.045s); }
+.marquee[data-state='win'] .bulb { animation: bulb-flash 0.3s steps(2, jump-none) 9; animation-delay: 0s; }
+@keyframes bulb-flash { 50% { opacity: 0.15; } }
+.marquee[data-state='limit'] .bulb {
+  background: radial-gradient(circle at 35% 30%, #ffd0cb, var(--led-red) 55%, #8a1610);
+  box-shadow: 0 0 8px var(--led-red);
+  animation: bulb-flash 0.6s steps(2, jump-none) 4;
+  animation-delay: 0s;
+}
+
+/* Buttons: glossy arcade style. .gold / .gray / .small are variants. */
+.arcade-btn {
+  --face: var(--cab-red);
+  --rim: var(--cab-red-dark);
+  position: relative;
+  padding: 12px 34px;
+  border: 2px solid rgba(0, 0, 0, 0.55);
+  border-radius: 999px;
+  background: radial-gradient(ellipse at 50% 18%, rgba(255, 255, 255, 0.55), transparent 42%),
+    linear-gradient(180deg, color-mix(in srgb, var(--face) 78%, white), var(--face) 55%, var(--rim));
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 5px 0 var(--rim), 0 8px 14px rgba(0, 0, 0, 0.6), inset 0 0 8px rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: transform 60ms, box-shadow 60ms, filter 120ms;
+}
+.arcade-btn:hover:not(:disabled) { filter: brightness(1.12); }
+.arcade-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 var(--rim), 0 3px 8px rgba(0, 0, 0, 0.6), inset 0 0 8px rgba(255, 255, 255, 0.25); }
+.arcade-btn:disabled { --face: #5a544c; --rim: #2e2a26; cursor: default; color: #b9b1a4; text-shadow: none; }
+.arcade-btn.gold { --face: #d9a521; --rim: #6b4b06; color: #2a1c00; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35); }
+.arcade-btn.gray { --face: #4b5661; --rim: #1f262d; }
+.arcade-btn.small { padding: 6px 14px; font-size: 12px; letter-spacing: 0.15em; box-shadow: 0 3px 0 var(--rim), 0 5px 8px rgba(0, 0, 0, 0.6); }
+.arcade-btn small { display: block; font-size: 11px; letter-spacing: 0.1em; font-weight: 600; opacity: 0.9; }
+.pulse-glow { animation: pulse-glow 1.1s ease-in-out infinite; }
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 5px 0 var(--rim), 0 8px 14px rgba(0, 0, 0, 0.6), 0 0 0 rgba(255, 90, 60, 0); }
+  50% { box-shadow: 0 5px 0 var(--rim), 0 8px 14px rgba(0, 0, 0, 0.6), 0 0 26px rgba(255, 90, 60, 0.9); }
+}
+
+/* Win callouts (src/ui/Callouts.tsx). */
+.win-banner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 26%;
+  text-align: center;
+  font-family: var(--mono);
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  pointer-events: none;
+  animation: win-pop 1.9s ease-out forwards;
+}
+.win-banner .win-title {
+  display: block;
+  font-size: 30px;
+  color: var(--gold);
+  text-shadow: 0 0 12px var(--gold), 0 3px 0 #6b4b06;
+}
+.win-banner .win-amount {
+  display: block;
+  font-size: 58px;
+  line-height: 1.1;
+  background: linear-gradient(180deg, #fff6c8, var(--gold) 55%, #c98a00);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 10px rgba(245, 197, 66, 0.9)) drop-shadow(0 3px 0 #6b4b06);
+}
+.win-banner .win-perf { display: block; font-size: 22px; color: var(--led-blue); text-shadow: 0 0 10px var(--led-blue); }
+.win-banner.big .win-title { font-size: 42px; animation: title-shake 0.12s linear 12; }
+.win-banner.big .win-amount { font-size: 78px; }
+.win-banner.jackpot .win-title { font-size: 54px; color: #fff; text-shadow: 0 0 18px var(--led-red), 0 0 34px var(--gold), 0 3px 0 #6b4b06; }
+.win-banner.jackpot .win-amount { font-size: 96px; }
+.win-banner.limit .win-title { color: var(--led-red); text-shadow: 0 0 14px var(--led-red), 0 3px 0 #4a0d08; }
+.win-banner.limit .win-amount { font-size: 20px; letter-spacing: 0.25em; background: none; color: #ff8a7a; filter: none; }
+.win-banner.drift { top: 11%; }
+.win-banner.drift .win-title { font-size: 20px; color: var(--drift, var(--gold)); text-shadow: 0 0 10px var(--drift, var(--gold)); }
+@keyframes win-pop {
+  0% { opacity: 0; transform: scale(0.55); }
+  12% { opacity: 1; transform: scale(1.14); }
+  22% { transform: scale(1); }
+  82% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-18px); }
+}
+@keyframes title-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+
+/* A gold flash across the whole screen on a jackpot. */
+.win-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 45%, rgba(255, 220, 120, 0.55), transparent 65%);
+  animation: flash-fade 1.2s ease-out forwards;
+}
+@keyframes flash-fade { from { opacity: 1; } to { opacity: 0; } }
+
+/* Neon sign flicker for GAME OVER. */
+.neon { animation: neon-flicker 2.4s linear infinite; }
+@keyframes neon-flicker {
+  0%, 18%, 22%, 62%, 66%, 100% { opacity: 1; }
+  20%, 64% { opacity: 0.55; }
 }

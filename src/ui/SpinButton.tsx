@@ -1,9 +1,9 @@
 import { useGameStore } from '../store/gameStore'
 import { initAudio } from '../audio/audioEngine'
 
-// The red PUSH button under the machine. On the title screen it starts the
-// run; while playing it pulls the lever (and shows what the pull costs). In
-// the other states other panels own the buttons.
+// The big red PUSH button under the machine. On the title screen it starts the
+// run (and pulses to invite a press); while playing it pulls the lever and shows
+// what the pull costs. In the other states other panels own the buttons.
 export function SpinButton() {
   const status = useGameStore((s) => s.status)
   const isSpinning = useGameStore((s) => s.isSpinning)
@@ -19,6 +19,7 @@ export function SpinButton() {
 
   return (
     <button
+      className={`arcade-btn${status === 'title' ? ' pulse-glow' : ''}`}
       onClick={() => {
         // Browser autoplay policy requires audio to start from a user
         // gesture — this is the first guaranteed one, so start/resume it
@@ -30,21 +31,15 @@ export function SpinButton() {
       disabled={disabled}
       style={{
         position: 'absolute',
-        bottom: 32,
+        bottom: 28,
         left: '50%',
         transform: 'translateX(-50%)',
-        padding: '12px 32px',
-        fontSize: 18,
-        fontWeight: 700,
-        letterSpacing: 2,
-        background: disabled ? '#555' : '#c0392b',
-        color: '#fff',
-        border: 'none',
-        borderRadius: 8,
-        cursor: disabled ? 'default' : 'pointer',
+        minWidth: 190,
+        fontSize: 24,
       }}
     >
-      {isSpinning ? 'SPINNING...' : status === 'title' ? 'PUSH' : `PUSH（−${spinCost}）`}
+      {isSpinning ? 'SPINNING' : broke ? 'NO COINS' : 'PUSH'}
+      {status === 'playing' && !isSpinning && !broke && <small>−{spinCost} COINS</small>}
     </button>
   )
 }
