@@ -16,6 +16,11 @@ body {
 body {
   background: #000;
   overflow: hidden;
+  font-family: var(--pixel);
+}
+
+button {
+  font-family: inherit;
 }
 
 /* The 3D canvas is rendered at low resolution on purpose (see App.tsx). */
@@ -47,7 +52,10 @@ canvas {
   --led-green: #39ff7a;
   --led-red: #ff453a;
   --led-blue: #4db8ff;
-  --mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Courier New', monospace;
+  /* The whole UI is set in a pixel font, like the reference (DotGothic16, bundled
+     via @fontsource in main.tsx); --mono is kept as the name for "the UI font". */
+  --pixel: 'DotGothic16', 'Hiragino Sans', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+  --mono: var(--pixel);
 }
 
 /* A cabinet panel: dark body, gold trim, a little depth. */
@@ -306,3 +314,29 @@ canvas {
 @keyframes stamp-down { from { opacity: 0; transform: rotate(-4deg) scale(2.6); } to { opacity: 1; transform: rotate(-4deg) scale(1); } }
 
 .crack { position: absolute; right: -34px; top: -22px; width: 92px; height: 92px; pointer-events: none; filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.7)); }
+
+/* ---- CRT look over everything (src/ui/CrtOverlay.tsx) ---- */
+.crt {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 100;
+}
+/* Rounded screen corners: a window with a huge black shadow around it, plus a
+   soft darkening toward the edges. */
+.crt-frame {
+  position: absolute;
+  inset: 6px;
+  border-radius: 30px / 24px;
+  box-shadow: 0 0 0 100vmax #000, inset 0 0 70px 14px rgba(0, 0, 0, 0.55);
+}
+/* Faint scanlines. */
+.crt-lines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px);
+  opacity: 0.55;
+  animation: crt-flicker 6s steps(60) infinite;
+}
+@keyframes crt-flicker { 0%, 100% { opacity: 0.55; } 50% { opacity: 0.5; } 52% { opacity: 0.6; } }

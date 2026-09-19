@@ -5,6 +5,10 @@ import { CanvasTexture, NearestFilter, RepeatWrapping, SRGBColorSpace } from 'th
 // we're after is chunky pixel art under a CRT filter, and it keeps us free of
 // image assets (same spirit as the synthesized audio).
 
+// The font for every bit of text drawn onto a canvas (falls back to monospace
+// until DotGothic16 has loaded — main.tsx waits for it before starting the app).
+export const PIXEL_FONT = '"DotGothic16", ui-monospace, "Courier New", monospace'
+
 export function makeCanvas(width: number, height: number) {
   const canvas = document.createElement('canvas')
   canvas.width = width

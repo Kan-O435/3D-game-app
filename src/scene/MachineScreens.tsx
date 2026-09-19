@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, type ReactNode } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useGameStore } from '../store/gameStore'
-import { makeCanvas, toTexture } from './canvasTextures'
+import { PIXEL_FONT, makeCanvas, toTexture } from './canvasTextures'
 
 // The machine's lit-up signs and displays. Each is a plane with a low-res canvas
 // texture that gets redrawn when the numbers it shows change (the canvases are
@@ -28,14 +28,14 @@ function useScreen(width: number, height: number, draw: Draw, scrolls = false) {
   const screen = useMemo(() => {
     const { canvas, ctx } = makeCanvas(width, height)
     // A scrolling screen needs wrap-around sampling so its offset can loop.
-    return { ctx, texture: toTexture(canvas, scrolls ? { repeat: [1, 1] } : {}) }
+    return { ctx, texture: toTexture(canvas, scrolls ? { repeat: [0.5, 1] } : {}) }
   }, [width, height, scrolls])
   useEffect(() => redraw(screen, draw, width, height), [screen, draw, width, height])
   return screen.texture
 }
 
 function glowText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, size: number, color: string, align: CanvasTextAlign = 'center') {
-  ctx.font = `bold ${size}px ui-monospace, "Courier New", monospace`
+  ctx.font = `bold ${size}px ${PIXEL_FONT}`
   ctx.textAlign = align
   ctx.textBaseline = 'middle'
   ctx.shadowColor = color
@@ -173,17 +173,17 @@ export function Ticker({ position }: { position: [number, number, number] }) {
     (ctx, w, h) => {
       ctx.fillStyle = '#0a0706'
       ctx.fillRect(0, 0, w, h)
-      // The phrase is drawn twice so one canvas width is exactly one period —
-      // scrolling the texture offset then loops without a seam.
-      const phrase = `* STAGE ${stage} * DUE ${due} * ${turnsLeft} LEFT *`
-      glowText(ctx, phrase, w / 4, h / 2 + 1, 12, '#ffb84a')
-      glowText(ctx, phrase, (w * 3) / 4, h / 2 + 1, 12, '#ffb84a')
+      // The phrase is drawn twice, half a canvas apart, so the canvas is exactly
+      // two periods — scrolling the texture offset then loops without a seam.
+      const phrase = `◆ STAGE ${stage} ◆ DUE ${due} ◆ ${turnsLeft} LEFT ◆ 炎上マーク混入中 ◆`
+      glowText(ctx, phrase, w / 4, h / 2 + 1, 13, '#ffb84a')
+      glowText(ctx, phrase, (w * 3) / 4, h / 2 + 1, 13, '#ffb84a')
     },
     [stage, due, turnsLeft],
   )
-  const texture = useScreen(512, 20, draw, true)
+  const texture = useScreen(1024, 20, draw, true)
   useFrame(({ clock }) => {
-    scrollTexture(texture, clock.elapsedTime, 0.04)
+    scrollTexture(texture, clock.elapsedTime, 0.03)
   })
   return <Screen width={1.6} height={0.1} position={position} texture={texture} />
 }

@@ -1,14 +1,13 @@
-import { makeCanvas, seeded } from './canvasTextures'
+import { PIXEL_FONT, makeCanvas, seeded } from './canvasTextures'
 
 // Text and paper for the wall props (order sheet, rules, the exchange board...).
 // Drawn small and sampled nearest-neighbour like everything else; English only
 // so it stays legible in any browser (see docs/NOTES.md "Looking at the game").
-const FONT = 'ui-monospace, "Courier New", monospace'
 
 type Ctx = CanvasRenderingContext2D
 
 function text(ctx: Ctx, label: string, x: number, y: number, size: number, color: string, align: CanvasTextAlign = 'left') {
-  ctx.font = `bold ${size}px ${FONT}`
+  ctx.font = `bold ${size}px ${PIXEL_FONT}`
   ctx.textAlign = align
   ctx.textBaseline = 'middle'
   ctx.fillStyle = color

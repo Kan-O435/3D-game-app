@@ -7,7 +7,7 @@ const paper: CSSProperties = {
   color: '#2a2622',
   border: '1px solid #8d8571',
   boxShadow: '0 8px 30px rgba(0, 0, 0, 0.6)',
-  fontFamily: '"Hiragino Mincho ProN", "Yu Mincho", serif',
+  fontFamily: 'var(--pixel)',
 }
 
 const row: CSSProperties = { display: 'flex', justifyContent: 'space-between', gap: 24, fontSize: 18, lineHeight: 1.9 }

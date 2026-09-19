@@ -8,6 +8,7 @@ import { PayPrompt } from './ui/PayPrompt'
 import { SpinHint } from './ui/SpinHint'
 import { GameOverScreen } from './ui/GameOverScreen'
 import { ClearScreen } from './ui/ClearScreen'
+import { CrtOverlay } from './ui/CrtOverlay'
 import { Shop } from './ui/Shop'
 import { OrderSheet } from './ui/OrderSheet'
 import { PayoutTable } from './ui/PayoutTable'
@@ -42,6 +43,7 @@ export default function App() {
       <GameOverScreen />
       <ClearScreen />
       <Hotkeys />
+      <CrtOverlay />
     </div>
   )
 }

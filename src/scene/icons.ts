@@ -1,6 +1,6 @@
 import { CanvasTexture } from 'three'
 import { SYMBOL_COUNT, SYMBOLS } from '../game/symbols'
-import { makeCanvas, toTexture } from './canvasTextures'
+import { PIXEL_FONT, makeCanvas, toTexture } from './canvasTextures'
 
 export { SYMBOL_COUNT }
 
@@ -29,7 +29,7 @@ const polygon = (ctx: CanvasRenderingContext2D, points: [number, number][]) => {
 
 const text = (ctx: CanvasRenderingContext2D, label: string, color: string, size: number) => {
   ctx.fillStyle = color
-  ctx.font = `bold ${size}px ui-monospace, "Courier New", monospace`
+  ctx.font = `bold ${size}px ${PIXEL_FONT}`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillText(label, C, C + 1)
