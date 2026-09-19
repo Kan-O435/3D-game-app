@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { CHARMS, REROLL_COST, SHOP_SLOTS, STARTING_MONEY, SYMBOLS, TURNS_PER_STAGE, termsFor } from '../game'
-import { canSpend, useGameStore } from './gameStore'
+import { CHARMS, REROLL_COST, SHOP_SLOTS, STARTING_MONEY, SYMBOLS, TOTAL_STAGES, TURNS_PER_STAGE, termsFor } from '../game'
+import { canPayEarly, canSpend, useGameStore } from './gameStore'
 
 // The store fires sound effects; they need a real AudioContext, which node lacks.
 vi.mock('../audio/audioEngine', () => ({ playSpinStart: vi.fn(), playWarning: vi.fn() }))
@@ -298,15 +298,128 @@ describe('drifting values in the store', () => {
   })
 })
 
+describe('paying off early', () => {
+  const ready = (patch: object = {}) =>
+    st.setState({ status: 'playing', isSpinning: false, stage: 1, due: 28, perfNeeded: 7, money: 40, perf: 9, turnsLeft: 5, ...patch })
+
+  it('canPayEarly needs playing, not spinning, turns left, and both requirements met', () => {
+    ready()
+    expect(canPayEarly(g())).toBe(true)
+    for (const patch of [{ status: 'shop' }, { isSpinning: true }, { turnsLeft: 0 }, { money: 27 }, { perf: 6 }]) {
+      ready(patch)
+      expect(canPayEarly(g())).toBe(false)
+    }
+  })
+
+  it('pays now: takes the due, keeps the rest, opens the shop, forfeits the leftover turns', () => {
+    ready()
+    g().payEarly()
+    expect(g()).toMatchObject({ status: 'shop', stage: 2, money: 12, lastPaid: 28, perf: 0, turnsLeft: 0 })
+  })
+
+  it('does nothing when the requirements are not met', () => {
+    ready({ money: 20 })
+    g().payEarly()
+    expect(g()).toMatchObject({ status: 'playing', money: 20 })
+    ready({ perf: 0 })
+    g().payEarly()
+    expect(g().status).toBe('playing')
+  })
+
+  it('paying off the last stage early clears the run', () => {
+    ready({ stage: TOTAL_STAGES })
+    g().payEarly()
+    expect(g().status).toBe('cleared')
+  })
+})
+
+describe('the ending', () => {
+  it('surviving the last deadline clears the run instead of opening the shop', () => {
+    atDeadline({ money: 200, perf: 99, stage: TOTAL_STAGES, due: 100, perfNeeded: 7 })
+    expect(g()).toMatchObject({ status: 'cleared', money: 100, shopOffer: [] })
+  })
+
+  it('failing the last deadline is still a game over', () => {
+    atDeadline({ money: 10, perf: 99, stage: TOTAL_STAGES, due: 100, perfNeeded: 7 })
+    expect(g().status).toBe('gameOver')
+  })
+
+  it('restart works from the ending', () => {
+    atDeadline({ money: 200, perf: 99, stage: TOTAL_STAGES, due: 100, perfNeeded: 7 })
+    g().restart()
+    expect(g()).toMatchObject({ status: 'briefing', stage: 1, totalEarned: 0, spinsMade: 0, radio: null })
+  })
+})
+
+describe('run statistics', () => {
+  it('counts spins and banks total earnings', () => {
+    startPlaying()
+    for (let i = 0; i < 3; i++) {
+      g().spin()
+      g().finishSpin()
+    }
+    expect(g().spinsMade).toBe(3)
+    expect(g().totalEarned).toBeGreaterThanOrEqual(0)
+    st.setState({ isSpinning: true, lastPayout: 40, lastPerf: 0, turnsLeft: 5 })
+    const before = g().totalEarned
+    g().finishSpin()
+    expect(g().totalEarned).toBe(before + 40)
+  })
+})
+
+describe('radio', () => {
+  it('opens with the tutorial line on the first stage, then generic stage-start lines', () => {
+    g().startRun()
+    g().acceptOrder()
+    expect(g().radio?.text).toContain('レバー')
+    const firstId = g().radio!.id
+    st.setState({ status: 'briefing', stage: 2 })
+    g().acceptOrder()
+    expect(g().radio!.id).toBeGreaterThan(firstId)
+  })
+
+  it('announces "both quotas met" exactly once per stage', () => {
+    startPlaying()
+    const rolled = { isSpinning: true, lastWins: [], lastPayout: 0, lastPerf: 0, turnsLeft: 8, money: 60, perf: 10, due: 28, perfNeeded: 7 }
+    st.setState(rolled)
+    g().finishSpin()
+    expect(g().radio?.text).toContain('伝票')
+    expect(g().payableAnnounced).toBe(true)
+    const id = g().radio!.id
+    st.setState({ ...rolled, radio: g().radio })
+    g().finishSpin()
+    expect(g().radio!.id).toBe(id) // still payable, no new announcement
+  })
+
+  it('reacts to a rate limit, and speaks when a stage is paid or the run is won', () => {
+    startPlaying()
+    st.setState({
+      isSpinning: true,
+      lastWins: [{ patternId: 'rate-limit', symbolId: 12, matchLength: 3, cells: [], startCol: 0, payout: 0, perf: 0 }],
+      lastPayout: 0,
+      lastPerf: 0,
+      turnsLeft: 8,
+      money: 5,
+      perf: 0,
+    })
+    g().finishSpin()
+    expect(g().radio?.text).toMatch(/炎上|燃え/)
+    atDeadline({ money: 50, perf: 9 })
+    expect(g().radio?.text).toMatch(/買い物|買いすぎ/)
+    atDeadline({ money: 200, perf: 99, stage: TOTAL_STAGES, due: 100 })
+    expect(g().radio?.text).toContain('生き残った')
+  })
+})
+
 describe('whole runs', () => {
-  it('always terminate, spin whenever it is allowed, and use every turn of every cleared stage', () => {
+  it('always terminate (dead or cleared), and spin whenever it is allowed', () => {
     let deepest = 0
     for (let run = 0; run < 150; run++) {
       g().restart()
       g().acceptOrder()
       let guard = 0
       let turnsThisStage = 0
-      while (g().status !== 'gameOver' && guard++ < 100000) {
+      while (g().status !== 'gameOver' && g().status !== 'cleared' && guard++ < 100000) {
         if (g().status === 'shop') {
           for (const id of g().shopOffer) g().buyCharm(id)
           g().leaveShop()
@@ -321,7 +434,7 @@ describe('whole runs', () => {
         g().finishSpin()
         if (g().status === 'shop') expect(turnsThisStage).toBeGreaterThanOrEqual(1)
       }
-      expect(g().status).toBe('gameOver')
+      expect(['gameOver', 'cleared']).toContain(g().status)
       deepest = Math.max(deepest, g().stage)
     }
     expect(deepest).toBeGreaterThanOrEqual(2)

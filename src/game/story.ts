@@ -6,13 +6,9 @@
 const STAGE_NAMES = [
   'お話会', // first goal: enough for the talk event
   '2ショット', // then the two-shot photo
-  'ライブ', // then finally a live show
-  'ワンマンライブ',
-  'ホールツアー',
-  '武道館',
-  'ドーム公演',
-  '全国ドームツアー',
-  '世界ツアー',
+  'ライブ', // then a live show
+  'ワンマンライブ', // then a headline show
+  '武道館', // the finale — the run is five stages long (TOTAL_STAGES)
 ] as const
 
 /** Name of the event you're saving for at this stage (1-based). */

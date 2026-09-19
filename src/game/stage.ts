@@ -1,5 +1,8 @@
 import type { Modifiers } from './charms'
 
+// The run is this many stages long; clearing the last one ends the game (a win).
+export const TOTAL_STAGES = 5
+
 export const TURNS_PER_STAGE = 12
 export const STARTING_MONEY = 30
 

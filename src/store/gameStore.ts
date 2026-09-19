@@ -15,6 +15,10 @@ import {
   STARTING_MONEY,
   TURNS_PER_STAGE,
   WARNING_TURNS,
+  TOTAL_STAGES,
+  BIG_WIN_PAYOUT,
+  radioLine,
+  type RadioEvent,
   SHOP_SLOTS,
   REROLL_COST,
   rollDrift,
@@ -27,9 +31,11 @@ import { playSpinStart, playWarning } from '../audio/audioEngine'
 
 // One pass through the game:
 //   title -> briefing -> playing -> (deadline) -> shop -> briefing -> playing ...
+// and after the last stage's deadline: 'cleared' (the ending). A failed deadline
+// is 'gameOver'.
 // 'briefing' is the stage's order sheet, 'shop' the exchange counter between
 // stages; each has its own camera station (see scene/FixedCamera.tsx).
-export type GameStatus = 'title' | 'briefing' | 'playing' | 'shop' | 'gameOver'
+export type GameStatus = 'title' | 'briefing' | 'playing' | 'shop' | 'gameOver' | 'cleared'
 
 // Why a run ended, for the game-over screen.
 export type FailReason = 'tokens' | 'perf'
@@ -62,6 +68,14 @@ interface GameState {
   // Owned charm ids (each can be owned once) and the current shop's stock.
   charms: string[]
   shopOffer: string[]
+  // Run statistics, for the end-of-run receipts.
+  totalEarned: number
+  spinsMade: number
+  // The boss's latest radio line (the caption at the bottom); `id` changes each
+  // time so the UI can replay its fade even when the text repeats.
+  radio: { id: number; text: string } | null
+  // Whether "both quotas met" was already announced this stage.
+  payableAnnounced: boolean
   startRun: () => void
   acceptOrder: () => void
   spin: () => void
@@ -69,6 +83,9 @@ interface GameState {
   // This is where the payout lands in `money` and, on the deadline turn, the
   // order is settled (or the run ends).
   finishSpin: () => void
+  // Pay the debt now instead of waiting for the last turn — only once both the
+  // coins and the performance requirement are already met.
+  payEarly: () => void
   buyCharm: (id: string) => void
   rerollShop: () => void
   leaveShop: () => void
@@ -97,12 +114,28 @@ const freshRun = (status: GameStatus) => ({
   lastDrift: null as Drift | null,
   charms: [] as string[],
   shopOffer: [] as string[],
+  totalEarned: 0,
+  spinsMade: 0,
+  radio: null as { id: number; text: string } | null,
+  payableAnnounced: false,
 })
 
 // Shop spending must leave enough to pay the coming stage's spin fee — otherwise
 // you could buy your way into a stage you can't even start.
 export function canSpend(s: Pick<GameState, 'money' | 'spinCost'>, price: number): boolean {
   return s.money - price >= s.spinCost
+}
+
+// Both requirements met while turns remain: the stage can be paid off early.
+export function canPayEarly(
+  s: Pick<GameState, 'status' | 'isSpinning' | 'money' | 'due' | 'perf' | 'perfNeeded' | 'turnsLeft'>,
+): boolean {
+  return s.status === 'playing' && !s.isSpinning && s.turnsLeft > 0 && s.money >= s.due && s.perf >= s.perfNeeded
+}
+
+// A radio line as a state patch (the id bumps so the caption re-plays).
+function speak(s: Pick<GameState, 'radio'>, event: RadioEvent): Pick<GameState, 'radio'> {
+  return { radio: { id: (s.radio?.id ?? 0) + 1, text: radioLine(event) } }
 }
 
 // The deadline: both the debt and the performance requirement must be met.
@@ -120,12 +153,26 @@ function settleDeadline(s: GameState, money: number, perf: number): Partial<Game
     }
   }
   const mods = resolveModifiers(s.charms)
+  // Paid off the last stage: the run is won.
+  if (s.stage >= TOTAL_STAGES) {
+    return {
+      money: money - s.due + mods.clearBonus,
+      perf: 0,
+      turnsLeft: 0,
+      lastPaid: s.due,
+      status: 'cleared',
+      payableAnnounced: false,
+      ...speak(s, 'cleared'),
+    }
+  }
   const stage = s.stage + 1
   return {
     money: money - s.due + mods.clearBonus,
     perf: 0,
     turnsLeft: 0,
     lastPaid: s.due,
+    payableAnnounced: false,
+    ...speak(s, 'shop'),
     stage,
     ...termsFor(stage, mods),
     status: 'shop',
@@ -144,7 +191,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     // No working capital for even one pull: the stage can't be played, so it
     // goes straight to the deadline (normally that's the end of the run).
     if (s.money < s.spinCost) set(settleDeadline(s, s.money, s.perf))
-    else set({ status: 'playing' })
+    else set({ status: 'playing', ...speak(s, s.stage === 1 && s.spinsMade === 0 ? 'tutorial' : 'stageStart') })
   },
   spin: () => {
     const { isSpinning, status, turnsLeft, charms, money, spinCost, valueFactors } = get()
@@ -171,12 +218,14 @@ export const useGameStore = create<GameState>((set, get) => ({
       money: money - spinCost,
       turnsLeft: turnsLeft - 1,
       lastDrift: null,
+      spinsMade: get().spinsMade + 1,
     })
   },
   finishSpin: () => {
     const s = get()
     const money = s.money + s.lastPayout
     const perf = s.perf + s.lastPerf
+    const totalEarned = s.totalEarned + s.lastPayout
 
     // Can't afford another pull: the remaining turns are forfeited and the
     // deadline comes now.
@@ -189,11 +238,37 @@ export const useGameStore = create<GameState>((set, get) => ({
       // Symbol values may shift between spins (never on the deadline turn — the
       // stage is over and they reset anyway).
       const { factors, drift } = rollDrift(s.valueFactors)
-      set({ isSpinning: false, money, perf, valueFactors: factors, lastDrift: drift })
+
+      // What (if anything) the boss says about this spin — one line, most
+      // important first.
+      const payable = money >= s.due && perf >= s.perfNeeded
+      const rateLimited = s.lastWins.some((w) => w.patternId === 'rate-limit')
+      let event: RadioEvent | null = null
+      if (payable && !s.payableAnnounced) event = 'payable'
+      else if (rateLimited) event = 'rateLimit'
+      else if (s.lastPayout >= BIG_WIN_PAYOUT) event = 'bigWin'
+      else if (s.turnsLeft === WARNING_TURNS) event = 'lowTurns'
+      else if (s.lastPayout > 0 && Math.random() < 0.35) event = 'win'
+
+      set({
+        isSpinning: false,
+        money,
+        perf,
+        totalEarned,
+        valueFactors: factors,
+        lastDrift: drift,
+        payableAnnounced: s.payableAnnounced || event === 'payable',
+        ...(event ? speak(s, event) : {}),
+      })
       return
     }
 
-    set({ isSpinning: false, ...settleDeadline(s, money, perf) })
+    set({ isSpinning: false, totalEarned, ...settleDeadline(s, money, perf) })
+  },
+  payEarly: () => {
+    const s = get()
+    if (!canPayEarly(s)) return
+    set({ isSpinning: false, ...settleDeadline(s, s.money, s.perf) })
   },
   buyCharm: (id) => {
     const { status, shopOffer, charms, money, stage } = get()

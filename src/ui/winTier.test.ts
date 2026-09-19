@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { BIG_WIN_PAYOUT } from '../game'
 import { BIG_WIN, JACKPOT, winTier } from './winTier'
 
 describe('winTier', () => {
@@ -15,5 +16,11 @@ describe('winTier', () => {
   it('is a jackpot from JACKPOT up', () => {
     expect(winTier(JACKPOT)).toBe('jackpot')
     expect(winTier(9999)).toBe('jackpot')
+  })
+})
+
+describe('big-win threshold', () => {
+  it('matches the radio\'s notion of a big win', () => {
+    expect(BIG_WIN).toBe(BIG_WIN_PAYOUT)
   })
 })
