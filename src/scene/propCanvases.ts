@@ -192,3 +192,32 @@ export function idolPosterCanvas() {
   ctx.strokeRect(1.5, 1.5, width - 3, height - 3)
   return canvas
 }
+
+/** The pay-and-leave slip that drops beside the machine once both quotas are met. */
+export function paySlipCanvas() {
+  const { canvas, ctx } = paper(72, 96, '#e6dcc0', 91)
+  text(ctx, '納付伝票', 36, 12, 12, '#231d16', 'center')
+  ctx.fillStyle = '#231d16'
+  ctx.fillRect(6, 20, 60, 1)
+  ;[30, 42, 54].forEach((y, i) => {
+    ctx.fillRect(8, y, 36 - i * 6, 1.5)
+    ctx.fillStyle = 'rgba(35,29,22,0.35)'
+    ctx.fillRect(8, y + 4, 52, 1)
+    ctx.fillStyle = '#231d16'
+  })
+  // red "pay and leave" stamp
+  ctx.save()
+  ctx.translate(36, 76)
+  ctx.rotate(-0.12)
+  ctx.strokeStyle = 'rgba(190,35,27,0.95)'
+  ctx.lineWidth = 2
+  ctx.strokeRect(-27, -10, 54, 20)
+  text(ctx, '納付して退場', 0, 0.5, 9, 'rgba(190,35,27,0.95)', 'center')
+  ctx.restore()
+  // punched hole for the string
+  ctx.fillStyle = '#0a0806'
+  ctx.beginPath()
+  ctx.arc(36, 4, 1.6, 0, Math.PI * 2)
+  ctx.fill()
+  return canvas
+}
