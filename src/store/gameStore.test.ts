@@ -351,6 +351,20 @@ describe('the ending', () => {
   })
 })
 
+describe('reel stop / skip requests', () => {
+  it('only count while the reels are spinning', () => {
+    startPlaying()
+    g().requestReelStop()
+    g().requestReelSkip()
+    expect(g()).toMatchObject({ reelStops: 0, reelSkips: 0 })
+    g().spin()
+    g().requestReelStop()
+    g().requestReelStop()
+    g().requestReelSkip()
+    expect(g()).toMatchObject({ reelStops: 2, reelSkips: 1 })
+  })
+})
+
 describe('run statistics', () => {
   it('counts spins and banks total earnings', () => {
     startPlaying()

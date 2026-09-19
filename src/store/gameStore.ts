@@ -76,6 +76,10 @@ interface GameState {
   radio: { id: number; text: string } | null
   // Whether "both quotas met" was already announced this stage.
   payableAnnounced: boolean
+  // Counters the reel animation watches: each request_* bump is one press —
+  // stop the next reel now, or skip the whole animation.
+  reelStops: number
+  reelSkips: number
   startRun: () => void
   acceptOrder: () => void
   spin: () => void
@@ -83,6 +87,8 @@ interface GameState {
   // This is where the payout lands in `money` and, on the deadline turn, the
   // order is settled (or the run ends).
   finishSpin: () => void
+  requestReelStop: () => void
+  requestReelSkip: () => void
   // Pay the debt now instead of waiting for the last turn — only once both the
   // coins and the performance requirement are already met.
   payEarly: () => void
@@ -118,6 +124,8 @@ const freshRun = (status: GameStatus) => ({
   spinsMade: 0,
   radio: null as { id: number; text: string } | null,
   payableAnnounced: false,
+  reelStops: 0,
+  reelSkips: 0,
 })
 
 // Shop spending must leave enough to pay the coming stage's spin fee — otherwise
@@ -264,6 +272,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
 
     set({ isSpinning: false, totalEarned, ...settleDeadline(s, money, perf) })
+  },
+  requestReelStop: () => {
+    if (get().isSpinning) set({ reelStops: get().reelStops + 1 })
+  },
+  requestReelSkip: () => {
+    if (get().isSpinning) set({ reelSkips: get().reelSkips + 1 })
   },
   payEarly: () => {
     const s = get()
