@@ -15,7 +15,7 @@ interface Pose {
 const STATIONS = {
   machine: { position: new Vector3(0, 1.3, 3.5), lookAt: new Vector3(0, 1.08, 0) },
   order: { position: new Vector3(-1.3, 1.55, 1.0), lookAt: new Vector3(-3.3, 1.65, 0.3) },
-  shop: { position: new Vector3(1.4, 1.5, 0.3), lookAt: new Vector3(3.3, 1.2, -0.5) },
+  shop: { position: new Vector3(1.0, 1.6, 0.7), lookAt: new Vector3(3.3, 1.55, -0.5) },
 } satisfies Record<string, Pose>
 
 function stationFor(status: GameStatus): keyof typeof STATIONS {
