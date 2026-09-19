@@ -17,3 +17,22 @@ export function stageName(stage: number): string {
   if (stage <= STAGE_NAMES.length) return STAGE_NAMES[stage - 1]
   return `伝説の${stage - STAGE_NAMES.length}周年公演`
 }
+
+export type DeathCause = 'both' | 'tokens' | 'perf'
+
+/**
+ * Cause of death for the certificate, read off the final numbers: short on
+ * coins, short on performance, or both.
+ */
+export function deathCause(s: { money: number; due: number; perf: number; perfNeeded: number }): DeathCause {
+  const shortOnCoins = s.money < s.due
+  const shortOnPerf = s.perf < s.perfNeeded
+  if (shortOnCoins && shortOnPerf) return 'both'
+  return shortOnCoins ? 'tokens' : 'perf'
+}
+
+export const DEATH_CAUSE_TEXT: Record<DeathCause, string> = {
+  both: '両ノルマ未達',
+  tokens: '納付額未達',
+  perf: '必要性能値未達',
+}

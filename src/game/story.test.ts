@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { TOTAL_STAGES, stageName } from './index'
+import { DEATH_CAUSE_TEXT, TOTAL_STAGES, deathCause, stageName } from './index'
 
 describe('stageName', () => {
   it('climbs the fan ladder: talk event, two-shot, live, headline show, Budokan', () => {
@@ -22,5 +22,27 @@ describe('stageName', () => {
   it('gives every stage in the story its own name', () => {
     const names = Array.from({ length: TOTAL_STAGES }, (_, i) => stageName(i + 1))
     expect(new Set(names).size).toBe(TOTAL_STAGES)
+  })
+})
+
+describe('deathCause', () => {
+  const base = { money: 10, due: 30, perf: 2, perfNeeded: 7 }
+
+  it('is "both" when short on coins and on performance', () => {
+    expect(deathCause(base)).toBe('both')
+  })
+
+  it('is "tokens" when only the coins fall short, "perf" when only performance does', () => {
+    expect(deathCause({ ...base, perf: 9 })).toBe('tokens')
+    expect(deathCause({ ...base, money: 50 })).toBe('perf')
+  })
+
+  it('treats exactly-enough as met', () => {
+    expect(deathCause({ ...base, money: 30 })).toBe('perf')
+    expect(deathCause({ money: 30, due: 30, perf: 6, perfNeeded: 7 })).toBe('perf')
+  })
+
+  it('has text for every cause', () => {
+    for (const cause of ['both', 'tokens', 'perf'] as const) expect(DEATH_CAUSE_TEXT[cause].length).toBeGreaterThan(0)
   })
 })
