@@ -7,7 +7,7 @@ import { makeCanvas, toTexture } from './canvasTextures'
 // texture that gets redrawn when the numbers it shows change (the canvases are
 // tiny and sampled with nearest-neighbour, so it reads as pixel art).
 
-export const MACHINE_TITLE = 'LUCKY CLOVER' // placeholder product name (docs/NOTES.md)
+export const MACHINE_TITLE = 'OSHI KATSU' // placeholder product name (docs/NOTES.md)
 
 type Draw = (ctx: CanvasRenderingContext2D, w: number, h: number) => void
 
@@ -107,15 +107,15 @@ export function TerminalPlate({ position }: { position: [number, number, number]
     ctx.fillRect(0, 0, w, h)
     ctx.strokeStyle = '#9a7c3e'
     ctx.strokeRect(0.5, 0.5, w - 1, h - 1)
-    glowText(ctx, 'TERMINAL', w / 2, h / 2 + 1, 13, '#e6c987')
+    glowText(ctx, 'FAN CLUB', w / 2, h / 2 + 1, 13, '#e6c987')
   }, [])
   return <Screen width={0.6} height={0.1} position={position} texture={useScreen(96, 16, draw)} />
 }
 
 /**
  * The display in the PUSH panel. On the title screen it just says PUSH; while
- * playing it becomes three readouts: coins (with what's due), performance, and
- * turns left before the deadline.
+ * playing it becomes three readouts: coins (with what's due), heat (performance),
+ * and days left before the event.
  */
 export function DisplayStrip({ position }: { position: [number, number, number] }) {
   const status = useGameStore((s) => s.status)
@@ -146,8 +146,8 @@ export function DisplayStrip({ position }: { position: [number, number, number] 
       const cell = w / 3
       const columns = [
         { label: `DUE ${due}`, value: String(money), color: money >= due ? '#6dff9a' : money < spinCost ? '#ff6a5a' : '#ffb84a' },
-        { label: 'PERF', value: `${perf}/${perfNeeded}`, color: perf >= perfNeeded ? '#6dff9a' : '#6cc4ff' },
-        { label: 'TURNS', value: isSpinning ? '..' : String(turnsLeft), color: turnsLeft <= 2 ? '#ff6a5a' : '#ffb84a' },
+        { label: 'HEAT', value: `${perf}/${perfNeeded}`, color: perf >= perfNeeded ? '#6dff9a' : '#6cc4ff' },
+        { label: 'DAYS', value: isSpinning ? '..' : String(turnsLeft), color: turnsLeft <= 2 ? '#ff6a5a' : '#ffb84a' },
       ]
       columns.forEach((c, i) => {
         const cx = cell * i + cell / 2
@@ -175,7 +175,7 @@ export function Ticker({ position }: { position: [number, number, number] }) {
       ctx.fillRect(0, 0, w, h)
       // The phrase is drawn twice so one canvas width is exactly one period —
       // scrolling the texture offset then loops without a seam.
-      const phrase = `* STAGE ${stage} * DUE ${due} * ${turnsLeft} LEFT *`
+      const phrase = `* LIVE ${stage} * DUE ${due} * ${turnsLeft} DAYS *`
       glowText(ctx, phrase, w / 4, h / 2 + 1, 12, '#ffb84a')
       glowText(ctx, phrase, (w * 3) / 4, h / 2 + 1, 12, '#ffb84a')
     },

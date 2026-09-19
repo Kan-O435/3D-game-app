@@ -4,9 +4,10 @@ import { makeCanvas, toTexture } from './canvasTextures'
 
 export { SYMBOL_COUNT }
 
-// Placeholder art: a dark tile with a simple coloured glyph per symbol, drawn at
-// 32x32 and sampled nearest-neighbour so it reads as chunky pixel art. Swap this
-// out once the real icon theme is decided (docs/NOTES.md "Open questions").
+// Placeholder art: a dark tile with a simple coloured glyph per symbol (fan-of-an-
+// idol motifs: glow-stick, ticket, mic, note, crown, cheki camera, the idol...),
+// drawn at 32x32 and sampled nearest-neighbour so it reads as chunky pixel art.
+// Swap in real art whenever it exists (docs/NOTES.md).
 // Must have at least SYMBOL_COUNT entries — keep in sync with game/symbols.ts.
 const TILE = 32
 const C = TILE / 2
@@ -35,7 +36,7 @@ const text = (ctx: CanvasRenderingContext2D, label: string, color: string, size:
 }
 
 const GLYPHS: { color: string; draw: Glyph }[] = [
-  { color: '#ff7a59', draw: (ctx, c) => { // burst
+  { color: '#ff7a59', draw: (ctx, c) => { // glow-stick burst
     stroke(ctx, c)
     for (let i = 0; i < 8; i++) {
       const a = (i * Math.PI) / 4
@@ -45,28 +46,29 @@ const GLYPHS: { color: string; draw: Glyph }[] = [
       ctx.stroke()
     }
   } },
-  { color: '#f2f2f2', draw: (ctx, c) => { // cube
-    stroke(ctx, c)
-    const pts: [number, number][] = Array.from({ length: 6 }, (_, i) => [C + Math.cos((i * Math.PI) / 3 - Math.PI / 2) * 11, C + Math.sin((i * Math.PI) / 3 - Math.PI / 2) * 11])
-    polygon(ctx, pts)
-    ctx.stroke()
-    ctx.beginPath()
-    ctx.moveTo(C, C); ctx.lineTo(pts[1][0], pts[1][1])
-    ctx.moveTo(C, C); ctx.lineTo(pts[3][0], pts[3][1])
-    ctx.moveTo(C, C); ctx.lineTo(pts[5][0], pts[5][1])
-    ctx.stroke()
+  { color: '#f2f2f2', draw: (ctx, c) => { // ticket
+    ctx.fillStyle = c
+    ctx.fillRect(4, 10, 24, 13)
+    ctx.globalCompositeOperation = 'destination-out'
+    ctx.beginPath(); ctx.arc(4, 16.5, 3, 0, Math.PI * 2); ctx.arc(28, 16.5, 3, 0, Math.PI * 2); ctx.fill()
+    ctx.globalCompositeOperation = 'source-over'
+    ctx.fillStyle = '#0e1013'
+    for (let y = 12; y < 22; y += 3) ctx.fillRect(21, y, 1.5, 1.6)
   } },
-  { color: '#3ddc97', draw: (ctx, c) => { // knot
-    stroke(ctx, c)
-    ctx.beginPath(); ctx.arc(C, C, 10, 0, Math.PI * 2); ctx.stroke()
-    ctx.beginPath(); ctx.arc(C + 3, C - 2, 5, 0, Math.PI * 2); ctx.stroke()
+  { color: '#3ddc97', draw: (ctx, c) => { // microphone
+    ctx.fillStyle = c
+    ctx.beginPath(); ctx.arc(C, 11, 6, 0, Math.PI * 2); ctx.fill()
+    polygon(ctx, [[C - 2.5, 16], [C + 2.5, 16], [C + 1.5, 27], [C - 1.5, 27]])
+    ctx.fill()
+    ctx.fillStyle = '#0e1013'
+    ctx.fillRect(C - 5, 10, 10, 1.4)
   } },
-  { color: '#7ec8ff', draw: (ctx, c) => { // four-point star
+  { color: '#7ec8ff', draw: (ctx, c) => { // sparkle
     ctx.fillStyle = c
     polygon(ctx, [[C, C - 13], [C + 3, C - 3], [C + 13, C], [C + 3, C + 3], [C, C + 13], [C - 3, C + 3], [C - 13, C], [C - 3, C - 3]])
     ctx.fill()
   } },
-  { color: '#4fd1c5', draw: (ctx, c) => { // flower
+  { color: '#4fd1c5', draw: (ctx, c) => { // fan-club badge
     ctx.fillStyle = c
     for (let i = 0; i < 6; i++) {
       const a = (i * Math.PI) / 3
@@ -74,26 +76,33 @@ const GLYPHS: { color: string; draw: Glyph }[] = [
     }
     ctx.beginPath(); ctx.arc(C, C, 3, 0, Math.PI * 2); ctx.fill()
   } },
-  { color: '#d0d5db', draw: (ctx, c) => { // open ring
-    stroke(ctx, c, 3.5)
-    ctx.beginPath(); ctx.arc(C, C, 9.5, Math.PI * 0.25, Math.PI * 1.75); ctx.stroke()
-  } },
-  { color: '#ffd166', draw: (ctx, c) => { // triangle
+  { color: '#d0d5db', draw: (ctx, c) => { // music note
     ctx.fillStyle = c
-    polygon(ctx, [[C, C - 11], [C + 11, C + 9], [C - 11, C + 9]])
+    ctx.beginPath(); ctx.ellipse(12, 23, 5, 3.6, -0.4, 0, Math.PI * 2); ctx.fill()
+    ctx.fillRect(15.5, 7, 2.2, 16)
+    polygon(ctx, [[17.5, 7], [25, 11.5], [25, 15.5], [17.5, 12]])
     ctx.fill()
   } },
-  { color: '#c77dff', draw: (ctx, c) => { // plus
+  { color: '#ffd166', draw: (ctx, c) => { // crown
     ctx.fillStyle = c
-    ctx.fillRect(C - 3, C - 11, 6, 22)
-    ctx.fillRect(C - 11, C - 3, 22, 6)
+    polygon(ctx, [[6, 23], [5, 10], [11, 16], [16, 7], [21, 16], [27, 10], [26, 23]])
+    ctx.fill()
+    ctx.fillRect(6, 23, 20, 3)
   } },
-  { color: '#ffe08a', draw: (ctx, c) => { // crescent
+  { color: '#c77dff', draw: (ctx, c) => { // ribbon bow
     ctx.fillStyle = c
-    ctx.beginPath(); ctx.arc(C, C, 11, 0, Math.PI * 2); ctx.fill()
-    ctx.globalCompositeOperation = 'destination-out'
-    ctx.beginPath(); ctx.arc(C + 5, C - 3, 9, 0, Math.PI * 2); ctx.fill()
-    ctx.globalCompositeOperation = 'source-over'
+    polygon(ctx, [[C, C], [4, 8], [4, 24]]); ctx.fill()
+    polygon(ctx, [[C, C], [28, 8], [28, 24]]); ctx.fill()
+    ctx.beginPath(); ctx.arc(C, C, 3.4, 0, Math.PI * 2); ctx.fill()
+  } },
+  { color: '#ffe08a', draw: (ctx, c) => { // instant camera (cheki)
+    ctx.fillStyle = c
+    ctx.fillRect(5, 10, 22, 15)
+    ctx.fillRect(9, 7, 6, 3)
+    ctx.fillStyle = '#0e1013'
+    ctx.beginPath(); ctx.arc(C + 1, 17.5, 5.2, 0, Math.PI * 2); ctx.fill()
+    ctx.fillStyle = c
+    ctx.beginPath(); ctx.arc(C + 1, 17.5, 2.6, 0, Math.PI * 2); ctx.fill()
   } },
   { color: '#ff5d8f', draw: (ctx, c) => { // heart
     ctx.fillStyle = c
@@ -101,22 +110,32 @@ const GLYPHS: { color: string; draw: Glyph }[] = [
     polygon(ctx, [[C - 11, C], [C + 11, C], [C, C + 12]])
     ctx.fill()
   } },
-  { color: '#ffffff', draw: (ctx, c) => { // K
-    text(ctx, 'K', c, 24)
-    ctx.fillStyle = '#4d8dff'
-    ctx.fillRect(C + 8, C - 12, 3, 3)
-  } },
-  { color: '#4d8dff', draw: (ctx, c) => { // whale
+  { color: '#ffffff', draw: (ctx, c) => { // the idol (silhouette) — a rare card
     ctx.fillStyle = c
-    ctx.beginPath(); ctx.ellipse(C - 1, C + 2, 11, 7, 0, 0, Math.PI * 2); ctx.fill()
-    polygon(ctx, [[C + 8, C + 1], [C + 14, C - 6], [C + 14, C + 7]])
+    ctx.beginPath(); ctx.arc(C, 10, 5, 0, Math.PI * 2); ctx.fill()
+    polygon(ctx, [[C, 15], [9, 27], [23, 27]])
     ctx.fill()
-    ctx.fillStyle = '#0e1013'
-    ctx.fillRect(C - 8, C, 2, 2)
+    ctx.fillStyle = '#ff5ea8'
+    ctx.fillRect(C - 3, 5, 6, 2)
   } },
-  { color: '#ff5a4a', draw: (ctx, c) => text(ctx, '6', c, 26) }, // curse
-  { color: '#ffcf40', draw: (ctx, c) => text(ctx, '★', c, 24) }, // scatter
-  { color: '#f5c542', draw: (ctx, c) => text(ctx, 'W', c, 24) }, // wild
+  { color: '#4d8dff', draw: (ctx, c) => { // stage light — a rare card
+    ctx.fillStyle = c
+    ctx.beginPath(); ctx.arc(C, 6, 4, 0, Math.PI * 2); ctx.fill()
+    ctx.globalAlpha = 0.6
+    polygon(ctx, [[C - 3, 9], [C + 3, 9], [26, 28], [6, 28]])
+    ctx.fill()
+    ctx.globalAlpha = 1
+  } },
+  { color: '#ff5a4a', draw: (ctx, c) => { // flame (炎上) — the curse
+    ctx.fillStyle = c
+    polygon(ctx, [[16, 3], [22, 12], [25, 19], [21, 28], [11, 28], [7, 19], [11, 12], [13.5, 16]])
+    ctx.fill()
+    ctx.fillStyle = '#ffd166'
+    polygon(ctx, [[16, 15], [20, 21], [18, 27], [14, 27], [12, 21]])
+    ctx.fill()
+  } },
+  { color: '#ffcf40', draw: (ctx, c) => text(ctx, '★', c, 24) }, // scatter (fan service)
+  { color: '#f5c542', draw: (ctx, c) => text(ctx, 'W', c, 24) }, // wild (the idol themself)
 ]
 
 // Same colour the glyph uses — lets DOM UI (payout table) show a matching swatch
@@ -135,7 +154,7 @@ export function createPlaceholderIconTexture(symbolIndex: number): CanvasTexture
   glyph.draw(ctx, glyph.color)
 
   // Tile border: a thin tint of the glyph colour; specials get a bright frame
-  // so wild / scatter / curse stand out at a glance.
+  // so wild / scatter / curse stand out at a glance. (The curse is a flame — 炎上.)
   ctx.globalAlpha = kind === 'normal' ? 0.55 : 1
   ctx.strokeStyle = kind === 'normal' ? glyph.color : '#ffffff'
   ctx.lineWidth = kind === 'normal' ? 1.5 : 2.5

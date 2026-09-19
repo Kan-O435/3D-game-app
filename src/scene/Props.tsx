@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { AdditiveBlending, DoubleSide } from 'three'
 import { glowCanvas, noiseCanvas, toTexture, windowCanvas } from './canvasTextures'
-import { exchangeSignCanvas, monitorCanvas, noteCanvas, plateCanvas, rulesCanvas, slipsBoardCanvas, workOrderCanvas } from './propCanvases'
+import { exchangeSignCanvas, idolPosterCanvas, monitorCanvas, noteCanvas, plateCanvas, rulesCanvas, slipsBoardCanvas, workOrderCanvas } from './propCanvases'
 import { AimedSpot } from './AimedSpot'
 import { ROOM } from './roomLayout'
 
@@ -24,6 +24,7 @@ export function Props() {
       notes: [61, 62, 63].map((seed) => toTexture(noteCanvas(seed))),
       board: toTexture(slipsBoardCanvas()),
       sign: toTexture(exchangeSignCanvas()),
+      idol: toTexture(idolPosterCanvas()),
       monitor: toTexture(monitorCanvas()),
       reroll: toTexture(plateCanvas('REROLL', '#8a2a20', '#f4e1d8')),
       next: toTexture(plateCanvas('NEXT', '#3a3a3a', '#e6e0d0')),
@@ -49,6 +50,13 @@ export function Props() {
         <meshBasicMaterial map={glow} color="#3f78c8" transparent opacity={0.6} blending={AdditiveBlending} depthWrite={false} />
       </mesh>
       <AimedSpot position={[WINDOW_X, 2.2, BACK + 0.15]} aim={[WINDOW_X - 0.75, 0, 0.6]} angle={0.7} penumbra={0.9} intensity={22} distance={6} color="#4d8be0" />
+
+      {/* ---- the idol poster on the back wall, lit pink ---- */}
+      <mesh position={[-1.85, 1.75, BACK + 0.012]}>
+        <planeGeometry args={[0.72, 1.02]} />
+        <meshBasicMaterial map={paperTextures.idol} toneMapped={false} />
+      </mesh>
+      <pointLight position={[-1.85, 1.8, BACK + 0.6]} color="#ff7ab8" intensity={2.2} distance={3} />
 
       {/* ---- bucket (with a puddle) ---- */}
       <mesh position={[-1.55, 0.16, 1.0]}>
@@ -110,7 +118,7 @@ export function Props() {
       </group>
       <pointLight position={[ROOM.minX + 1.4, 2.4, 0.4]} color="#ffe2b0" intensity={4} distance={5} />
 
-      {/* ---- right wall: the exchange counter — sign, board of slips, monitor, desk buttons ---- */}
+      {/* ---- right wall: the merch counter — sign, board of slips, monitor, desk buttons ---- */}
       <mesh position={[ROOM.maxX - 0.5, 0.45, -0.5]}>
         <boxGeometry args={[1.0, 0.9, 2.4]} />
         <meshStandardMaterial map={crate} roughness={1} />
