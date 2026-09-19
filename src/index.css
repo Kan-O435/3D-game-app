@@ -30,3 +30,13 @@ body {
 .hud-pop {
   animation: hud-pop 1.4s ease-out forwards;
 }
+
+/* Overlays that appear once the camera has settled on a station. */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.fade-in {
+  animation: fade-in 0.5s ease 0.9s both;
+}

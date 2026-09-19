@@ -13,13 +13,19 @@ const PLACEHOLDER_COLORS = [
   '#f72585', '#ff9f1c', '#2ec4b6', '#e76f51', '#a8dadc',
 ]
 
+// Same colour the placeholder texture uses — lets DOM UI (payout table) show a
+// matching swatch without touching three.js.
+export function symbolColor(symbolIndex: number): string {
+  return PLACEHOLDER_COLORS[symbolIndex % PLACEHOLDER_COLORS.length]
+}
+
 export function createPlaceholderIconTexture(symbolIndex: number): CanvasTexture {
   const canvas = document.createElement('canvas')
   canvas.width = 128
   canvas.height = 128
   const ctx = canvas.getContext('2d')!
 
-  ctx.fillStyle = PLACEHOLDER_COLORS[symbolIndex % PLACEHOLDER_COLORS.length]
+  ctx.fillStyle = symbolColor(symbolIndex)
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
   // Specials get a border and a letter instead of a number so they read as

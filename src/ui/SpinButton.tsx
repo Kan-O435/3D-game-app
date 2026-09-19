@@ -1,14 +1,21 @@
 import { useGameStore } from '../store/gameStore'
 import { initAudio } from '../audio/audioEngine'
 
-// The PUSH button. Only shown while playing — GameOverScreen owns RETRY and
-// Shop owns NEXT STAGE.
+// The red PUSH button under the machine. On the title screen it starts the
+// run; while playing it pulls the lever (and shows what the pull costs). In
+// the other states other panels own the buttons.
 export function SpinButton() {
-  const spin = useGameStore((s) => s.spin)
+  const status = useGameStore((s) => s.status)
   const isSpinning = useGameStore((s) => s.isSpinning)
-  const isPlaying = useGameStore((s) => s.status === 'playing')
+  const money = useGameStore((s) => s.money)
+  const spinCost = useGameStore((s) => s.spinCost)
+  const spin = useGameStore((s) => s.spin)
+  const startRun = useGameStore((s) => s.startRun)
 
-  if (!isPlaying) return null
+  if (status !== 'title' && status !== 'playing') return null
+
+  const broke = status === 'playing' && money < spinCost
+  const disabled = isSpinning || broke
 
   return (
     <button
@@ -17,9 +24,10 @@ export function SpinButton() {
         // gesture — this is the first guaranteed one, so start/resume it
         // here rather than trying to play BGM on mount.
         initAudio()
-        spin()
+        if (status === 'title') startRun()
+        else spin()
       }}
-      disabled={isSpinning}
+      disabled={disabled}
       style={{
         position: 'absolute',
         bottom: 32,
@@ -29,14 +37,14 @@ export function SpinButton() {
         fontSize: 18,
         fontWeight: 700,
         letterSpacing: 2,
-        background: isSpinning ? '#555' : '#c0392b',
+        background: disabled ? '#555' : '#c0392b',
         color: '#fff',
         border: 'none',
         borderRadius: 8,
-        cursor: isSpinning ? 'default' : 'pointer',
+        cursor: disabled ? 'default' : 'pointer',
       }}
     >
-      {isSpinning ? 'SPINNING...' : 'PUSH'}
+      {isSpinning ? 'SPINNING...' : status === 'title' ? 'PUSH' : `PUSH（−${spinCost}）`}
     </button>
   )
 }

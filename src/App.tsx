@@ -5,6 +5,9 @@ import { MuteButton } from './ui/MuteButton'
 import { Hud } from './ui/Hud'
 import { GameOverScreen } from './ui/GameOverScreen'
 import { Shop } from './ui/Shop'
+import { OrderSheet } from './ui/OrderSheet'
+import { PayoutTable } from './ui/PayoutTable'
+import { Hotkeys } from './ui/Hotkeys'
 
 export default function App() {
   return (
@@ -13,10 +16,13 @@ export default function App() {
         <Scene />
       </Canvas>
       <Hud />
+      <PayoutTable />
       <SpinButton />
       <MuteButton />
+      <OrderSheet />
       <Shop />
       <GameOverScreen />
+      <Hotkeys />
     </div>
   )
 }

@@ -19,6 +19,11 @@ export interface Modifiers {
   clearBonus: number
   // Pattern ids (see paylines.ts) unlocked on top of the base rows.
   extraPatterns: string[]
+  // Multiplies the performance points a spin earns.
+  perfMultiplier: number
+  // Scale the per-spin fee and the stage's debt (1 = unchanged, <1 = cheaper).
+  spinCostFactor: number
+  dueFactor: number
 }
 
 export interface CharmDef {
@@ -45,84 +50,105 @@ export const CHARMS: readonly CharmDef[] = [
     id: 'blood-pact',
     name: '血の契約',
     description: '配当が 25% 増える',
-    price: 16,
+    price: 60,
     apply: (m) => void (m.payoutMultiplier += 0.25),
   },
   {
     id: 'candle-stub',
     name: '蝋燭の残り火',
     description: '各ステージのターン +1',
-    price: 6,
+    price: 25,
     apply: (m) => void (m.extraTurns += 1),
   },
   {
     id: 'rusty-key',
     name: '錆びた鍵',
     description: '低位シンボルが出やすくなる',
-    price: 5,
+    price: 20,
     apply: (m) => boost(m, range(0, 4), 3),
   },
   {
     id: 'black-cat-eye',
     name: '黒猫の目',
     description: 'レアシンボルが出やすくなる',
-    price: 20,
+    price: 80,
     apply: (m) => boost(m, range(10, 12), 6),
   },
   {
     id: 'pity-coin',
     name: '慰めの硬貨',
-    description: '外れたスピンでも +1 コイン',
-    price: 22,
-    apply: (m) => void (m.consolation += 1),
+    description: '外れたスピンでも +5 コイン',
+    price: 80,
+    apply: (m) => void (m.consolation += 5),
   },
   {
     id: 'silver-tooth',
     name: '銀の歯',
-    description: '当たりのラインごとに +1 コイン',
-    price: 11,
-    apply: (m) => void (m.winBonus += 1),
+    description: '当たりのラインごとに +5 コイン',
+    price: 40,
+    apply: (m) => void (m.winBonus += 5),
   },
   {
     id: 'skull-ring',
     name: '骸骨の指輪',
     description: '4個以上揃いの配当が 2.5 倍',
-    price: 8,
+    price: 35,
     apply: (m) => void (m.longMatchMultiplier *= 2.5),
   },
   {
     id: 'fate-dice',
     name: '運命の賽',
-    description: '支払いのあと +6 コイン',
-    price: 10,
-    apply: (m) => void (m.clearBonus += 6),
+    description: '支払いのあと +30 コイン',
+    price: 55,
+    apply: (m) => void (m.clearBonus += 30),
   },
   {
     id: 'wild-tongue',
     name: '偽りの舌',
     description: 'ワイルド(W)が出やすくなる',
-    price: 12,
+    price: 45,
     apply: (m) => boost(m, [WILD_ID], 2),
   },
   {
     id: 'star-lure',
     name: '星の誘い',
     description: 'ボーナス(★)が出やすくなる',
-    price: 12,
+    price: 55,
     apply: (m) => boost(m, [SCATTER_ID], 1.4),
+  },
+  {
+    id: 'overclock',
+    name: '過負荷駆動',
+    description: '獲得する性能値が 1.5 倍',
+    price: 40,
+    apply: (m) => void (m.perfMultiplier *= 1.5),
+  },
+  {
+    id: 'cheap-lever',
+    name: '古びたレバー',
+    description: 'スピン費が 25% 安くなる',
+    price: 30,
+    apply: (m) => void (m.spinCostFactor *= 0.75),
+  },
+  {
+    id: 'tax-break',
+    name: '減免通知',
+    description: '納付額が 15% 減る',
+    price: 50,
+    apply: (m) => void (m.dueFactor *= 0.85),
   },
   {
     id: 'v-scar',
     name: '裂け目',
     description: 'V字・逆V字のラインでも当たる',
-    price: 22,
+    price: 80,
     apply: (m) => void m.extraPatterns.push('v', 'inv-v'),
   },
   {
     id: 'crooked-blade',
     name: '歪んだ刃',
     description: '斜めのラインでも当たる',
-    price: 22,
+    price: 80,
     apply: (m) => void m.extraPatterns.push('diag-down', 'diag-up'),
   },
 ]
@@ -141,6 +167,9 @@ export function resolveModifiers(ownedIds: readonly string[]): Modifiers {
     longMatchMultiplier: 1,
     clearBonus: 0,
     extraPatterns: [],
+    perfMultiplier: 1,
+    spinCostFactor: 1,
+    dueFactor: 1,
   }
   for (const id of ownedIds) findCharm(id)?.apply(m)
   return m
@@ -157,6 +186,11 @@ export function computePayout(wins: readonly LineWin[], m: Modifiers): number {
     0,
   )
   return Math.round(base * m.payoutMultiplier)
+}
+
+// Performance points a spin earns, after charm effects.
+export function computePerformance(wins: readonly LineWin[], m: Modifiers): number {
+  return Math.round(wins.reduce((sum, w) => sum + w.perf, 0) * m.perfMultiplier)
 }
 
 // Up to `count` distinct charms the player doesn't own yet. `random` is

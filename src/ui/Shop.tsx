@@ -1,22 +1,38 @@
-import { useGameStore } from '../store/gameStore'
-import { dueForStage, findCharm } from '../game'
+import { canSpend, useGameStore } from '../store/gameStore'
+import { findCharm, REROLL_COST } from '../game'
 
-// Between-stage shop. Reads/writes the store only; the store decides what's
-// buyable, this just renders it.
+// The exchange counter between stages. Reads/writes the store only; the store
+// decides what's buyable, this just renders it. Number keys 1-8 buy (see
+// Hotkeys.tsx).
 export function Shop() {
   const isShop = useGameStore((s) => s.status === 'shop')
   const stage = useGameStore((s) => s.stage)
   const money = useGameStore((s) => s.money)
   const due = useGameStore((s) => s.due)
+  const perfNeeded = useGameStore((s) => s.perfNeeded)
+  const spinCost = useGameStore((s) => s.spinCost)
+  const lastPaid = useGameStore((s) => s.lastPaid)
   const offer = useGameStore((s) => s.shopOffer)
   const owned = useGameStore((s) => s.charms)
   const buyCharm = useGameStore((s) => s.buyCharm)
+  const rerollShop = useGameStore((s) => s.rerollShop)
   const leaveShop = useGameStore((s) => s.leaveShop)
 
   if (!isShop) return null
 
+  const bigButton = {
+    padding: '12px 28px',
+    fontSize: 16,
+    fontWeight: 700,
+    letterSpacing: 2,
+    color: '#fff',
+    border: 'none',
+    borderRadius: 8,
+  } as const
+
   return (
     <div
+      className="fade-in"
       style={{
         position: 'absolute',
         inset: 0,
@@ -24,87 +40,89 @@ export function Shop() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 16,
+        gap: 14,
         padding: 16,
         boxSizing: 'border-box',
-        background: 'rgba(0, 0, 0, 0.88)',
+        background: 'rgba(0, 0, 0, 0.55)',
         color: '#eee',
         fontFamily: 'monospace',
       }}
     >
-      <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: 4, color: '#2ecc71' }}>
-        PAID {dueForStage(stage - 1)}
+      <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: 4, color: '#2ecc71' }}>
+        納付完了 −{lastPaid}
       </div>
       <div style={{ fontSize: 18 }}>
-        MONEY <span style={{ color: '#f1c40f' }}>{money}</span>
-        <span style={{ color: '#999' }}> / NEXT DUE {due}</span>
-      </div>
-      <div style={{ fontSize: 13, color: '#999' }}>
-        次の期限までに払えるだけ残す — 買うか、貯めるか
+        COINS <span style={{ color: '#f1c40f' }}>{money}</span>
+        <span style={{ color: '#999' }}>
+          {' '}
+          / STAGE {stage}: 納付 {due} · {perfNeeded}P · スピン費 {spinCost}
+        </span>
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center' }}>
-        {offer.map((id) => {
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+          gap: 10,
+          width: 'min(100%, 980px)',
+        }}
+      >
+        {offer.map((id, i) => {
           const charm = findCharm(id)
           if (!charm) return null
           const bought = owned.includes(id)
-          const canAfford = money >= charm.price
+          const canAfford = canSpend({ money, spinCost }, charm.price)
           return (
-            <div
+            <button
               key={id}
+              onClick={() => buyCharm(id)}
+              disabled={bought || !canAfford}
               style={{
-                width: 190,
-                padding: 16,
                 display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                background: '#1a1a1a',
-                border: `1px solid ${bought ? '#2ecc71' : '#555'}`,
-                borderRadius: 8,
-                opacity: bought ? 0.6 : 1,
+                alignItems: 'center',
+                gap: 10,
+                padding: '10px 12px',
+                textAlign: 'left',
+                background: bought ? '#1f3a29' : '#e8e1cd',
+                color: bought ? '#8fd6a5' : '#2a2622',
+                border: `2px solid ${bought ? '#2ecc71' : '#8d8571'}`,
+                borderRadius: 6,
+                opacity: !bought && !canAfford ? 0.5 : 1,
+                cursor: bought || !canAfford ? 'default' : 'pointer',
+                fontFamily: 'inherit',
               }}
             >
-              <div style={{ fontSize: 18, fontWeight: 700 }}>{charm.name}</div>
-              <div style={{ fontSize: 13, color: '#bbb', minHeight: 36 }}>{charm.description}</div>
-              <button
-                onClick={() => buyCharm(id)}
-                disabled={bought || !canAfford}
-                style={{
-                  padding: '8px 12px',
-                  fontSize: 15,
-                  fontWeight: 700,
-                  background: bought ? '#27ae60' : canAfford ? '#c0392b' : '#444',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 6,
-                  cursor: bought || !canAfford ? 'default' : 'pointer',
-                }}
-              >
-                {bought ? 'SOLD' : `BUY ${charm.price}`}
-              </button>
-            </div>
+              <span style={{ fontSize: 20, fontWeight: 800, width: 22 }}>{i + 1}</span>
+              <span style={{ flex: 1 }}>
+                <span style={{ display: 'block', fontSize: 16, fontWeight: 700 }}>{charm.name}</span>
+                <span style={{ display: 'block', fontSize: 12 }}>{charm.description}</span>
+              </span>
+              <span style={{ fontSize: 18, fontWeight: 800, color: bought ? '#2ecc71' : '#a3231b' }}>
+                {bought ? 'SOLD' : charm.price}
+              </span>
+            </button>
           )
         })}
-        {offer.length === 0 && <div style={{ color: '#999' }}>品切れ — もう買えるものはない</div>}
+        {offer.length === 0 && <div style={{ color: '#999' }}>品切れ — 品替えで入れ替えよう</div>}
       </div>
 
-      <button
-        onClick={leaveShop}
-        style={{
-          marginTop: 8,
-          padding: '12px 32px',
-          fontSize: 18,
-          fontWeight: 700,
-          letterSpacing: 2,
-          background: '#c0392b',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 8,
-          cursor: 'pointer',
-        }}
-      >
-        NEXT STAGE
-      </button>
+      <div style={{ fontSize: 12, color: '#888' }}>※ スピン費（{spinCost}）を下回る買い物はできない</div>
+      <div style={{ display: 'flex', gap: 14, marginTop: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <button
+          onClick={rerollShop}
+          disabled={!canSpend({ money, spinCost }, REROLL_COST)}
+          style={{
+            ...bigButton,
+            background: !canSpend({ money, spinCost }, REROLL_COST) ? '#444' : '#5d6d7e',
+            cursor: !canSpend({ money, spinCost }, REROLL_COST) ? 'default' : 'pointer',
+          }}
+        >
+          品替え（−{REROLL_COST}）
+        </button>
+        <button onClick={leaveShop} style={{ ...bigButton, background: '#c0392b', cursor: 'pointer' }}>
+          次のステージへ
+        </button>
+      </div>
     </div>
   )
 }

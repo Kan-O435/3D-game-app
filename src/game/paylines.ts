@@ -1,6 +1,6 @@
 import { COLUMNS } from './layout'
 import { cellAt, type Grid } from './spin'
-import { SCATTER_ID, SYMBOLS, WILD_ID } from './symbols'
+import { SCATTER_ID, SYMBOLS, WILD_ID, type SymbolKind } from './symbols'
 
 // A payline is one row index per column: [1,1,1,1,1] is the middle row,
 // [0,1,2,1,0] a V. Wins are matched left-to-right from column 0 along it.
@@ -36,6 +36,8 @@ export interface LineWin {
   cells: number[]
   // May be fractional (pattern factor); computePayout rounds the spin total.
   payout: number
+  // Performance points this win earns (see symbols.ts `perf`); 0 for scatters.
+  perf: number
 }
 
 // Classic left-to-right slot rule: a win is a run of the same symbol starting
@@ -64,9 +66,16 @@ function payoutFor(symbolId: number, matchLength: number): number {
 // pays the 5 rate). Flat coins — not multiplied by the line-match table.
 const SCATTER_MIN = 3
 const SCATTER_PAYOUT: Readonly<Record<number, number>> = {
-  3: 6,
-  4: 20,
-  5: 60,
+  3: 30,
+  4: 100,
+  5: 300,
+}
+
+// One point of performance per matched symbol beyond the first, times the
+// symbol's own perf value: a 2-run of a perf-2 symbol is 2, a 5-run is 8.
+function perfFor(symbolId: number, matchLength: number): number {
+  const symbol = SYMBOLS.find((s) => s.id === symbolId)
+  return (symbol?.perf ?? 0) * (matchLength - 1)
 }
 
 const KIND_BY_ID = new Map(SYMBOLS.map((s) => [s.id, s.kind]))
@@ -97,6 +106,7 @@ function winOnPattern(grid: Grid, pattern: Pattern): LineWin | null {
     matchLength: length,
     cells: pattern.rows.slice(0, length).map((row, col) => row * COLUMNS + col),
     payout: payoutFor(symbolId, length) * pattern.payoutFactor,
+    perf: perfFor(symbolId, length),
   }
 }
 
@@ -111,6 +121,7 @@ function scatterWin(grid: Grid): LineWin | null {
     matchLength: cells.length,
     cells,
     payout: SCATTER_PAYOUT[Math.min(cells.length, 5)],
+    perf: 0,
   }
 }
 
@@ -134,4 +145,36 @@ export function findLineWins(
 
 export function totalPayout(wins: readonly LineWin[]): number {
   return wins.reduce((sum, win) => sum + win.payout, 0)
+}
+
+// Rows for the on-screen payout table (配当表): symbols that pay the same are
+// grouped into one row. `lengths`/`payouts` are parallel — for line rows that's
+// 2..5 in a row on a base pattern; for the scatter row it's 3..5 anywhere.
+export interface PayoutRow {
+  kind: SymbolKind
+  symbolIds: number[]
+  perf: number
+  lengths: number[]
+  payouts: number[]
+}
+
+export function payoutTable(): PayoutRow[] {
+  const rows = new Map<string, PayoutRow>()
+  for (const s of SYMBOLS) {
+    const key = s.kind === 'scatter' ? 'scatter' : `${s.kind}-${s.payout}-${s.perf}`
+    const existing = rows.get(key)
+    if (existing) {
+      existing.symbolIds.push(s.id)
+      continue
+    }
+    const lengths = s.kind === 'scatter' ? [3, 4, 5] : [2, 3, 4, 5]
+    rows.set(key, {
+      kind: s.kind,
+      symbolIds: [s.id],
+      perf: s.perf,
+      lengths,
+      payouts: lengths.map((n) => (s.kind === 'scatter' ? SCATTER_PAYOUT[n] : payoutFor(s.id, n))),
+    })
+  }
+  return [...rows.values()]
 }

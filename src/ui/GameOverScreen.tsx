@@ -5,6 +5,9 @@ export function GameOverScreen() {
   const stage = useGameStore((s) => s.stage)
   const money = useGameStore((s) => s.money)
   const due = useGameStore((s) => s.due)
+  const perf = useGameStore((s) => s.perf)
+  const perfNeeded = useGameStore((s) => s.perfNeeded)
+  const failReason = useGameStore((s) => s.failReason)
   const restart = useGameStore((s) => s.restart)
 
   if (!isGameOver) return null
@@ -25,9 +28,11 @@ export function GameOverScreen() {
       }}
     >
       <div style={{ fontSize: 56, fontWeight: 800, letterSpacing: 6, color: '#c0392b' }}>GAME OVER</div>
-      <div style={{ fontSize: 20 }}>Couldn't pay at stage {stage}</div>
+      <div style={{ fontSize: 20 }}>
+        STAGE {stage}: {failReason === 'perf' ? '性能値が足りなかった' : '納付額が足りなかった'}
+      </div>
       <div style={{ fontSize: 16, color: '#999' }}>
-        MONEY {money} / DUE {due}
+        COINS {money} / 納付 {due}　·　PERF {perf} / {perfNeeded} P
       </div>
       <button
         onClick={restart}

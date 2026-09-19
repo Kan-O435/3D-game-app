@@ -31,6 +31,11 @@ const labelStyle: CSSProperties = { color: '#999', letterSpacing: 1 }
 export function Hud() {
   const money = useGameStore((s) => s.money)
   const due = useGameStore((s) => s.due)
+  const perf = useGameStore((s) => s.perf)
+  const perfNeeded = useGameStore((s) => s.perfNeeded)
+  const spinCost = useGameStore((s) => s.spinCost)
+  const lastPerf = useGameStore((s) => s.lastPerf)
+  const isPlaying = useGameStore((s) => s.status === 'playing')
   const stage = useGameStore((s) => s.stage)
   const turnsLeft = useGameStore((s) => s.turnsLeft)
   const isSpinning = useGameStore((s) => s.isSpinning)
@@ -38,7 +43,11 @@ export function Hud() {
   const charms = useGameStore((s) => s.charms)
 
   const progress = Math.min(1, money / due)
+  const perfProgress = Math.min(1, perf / perfNeeded)
   const lowTurns = turnsLeft <= WARNING_TURNS
+
+  // The order/shop screens carry their own numbers; this panel is for playing.
+  if (!isPlaying) return null
 
   return (
     <>
@@ -48,7 +57,7 @@ export function Hud() {
           <span>{stage}</span>
         </div>
         <div style={rowStyle}>
-          <span style={labelStyle}>MONEY</span>
+          <span style={labelStyle}>COINS</span>
           <span style={{ color: '#f1c40f' }}>{money}</span>
         </div>
         <div style={rowStyle}>
@@ -65,6 +74,27 @@ export function Hud() {
               transition: 'width 300ms',
             }}
           />
+        </div>
+        <div style={rowStyle}>
+          <span style={labelStyle}>PERF</span>
+          <span style={{ color: perf >= perfNeeded ? '#7fd18b' : undefined }}>
+            {perf} / {perfNeeded} P
+          </span>
+        </div>
+        <div style={{ height: 6, margin: '4px 0 6px', background: '#333', borderRadius: 3 }}>
+          <div
+            style={{
+              width: `${perfProgress * 100}%`,
+              height: '100%',
+              background: '#3498db',
+              borderRadius: 3,
+              transition: 'width 300ms',
+            }}
+          />
+        </div>
+        <div style={rowStyle}>
+          <span style={labelStyle}>SPIN FEE</span>
+          <span>{spinCost}</span>
         </div>
         <div style={rowStyle}>
           <span style={labelStyle}>DEADLINE</span>
@@ -89,9 +119,10 @@ export function Hud() {
 
       {/* Payout only shows once the reels have visibly stopped, matching when
           `money` itself updates. The key restarts the pop animation per result. */}
-      {!isSpinning && lastPayout > 0 && (
+      {!isSpinning && (lastPayout > 0 || lastPerf > 0) && (
         <div key={`${stage}-${turnsLeft}-${money}`} className="hud-pop" style={calloutStyle('#f1c40f', 48, '30%')}>
           +{lastPayout}
+          {lastPerf > 0 && <span style={{ fontSize: 24, color: '#5dade2' }}>　+{lastPerf}P</span>}
         </div>
       )}
     </>
