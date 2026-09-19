@@ -14,24 +14,24 @@ export const SHOP_SLOTS = 8
 export const REROLL_COST = 6
 
 // What a stage's order demands. All three grow with the stage:
-//  - due:        coins paid on the stage's last turn (34, 57, 94, 145, 202)
+//  - due:        coins paid on the stage's last turn (35, 59, 99, 155, 227)
 //  - perfNeeded: performance points (P) that must have been earned by then
-//                (8, 9, 10, 11, 12) — money alone isn't enough
+//                (14, 16, 18, 20, 22) — money alone isn't enough
 //  - spinCost:   coins charged for every spin (2, 2, 2, 3, 3, 3, 4, ...)
 // The deadline is the *last turn* of the stage; having enough early does
 // nothing, every stage plays out all its turns. Leftover coins carry over.
 // Numbers come from a Monte Carlo run against the current payout table (a spin
-// is worth ~9 coins and ~1.4 P on average, ~50% of spins pay). Over the five
-// stages: never buying charms clears the run ~13% of the time, buying wisely
-// ~34% — the steep last stages are the difficulty, cheap charms are the way
-// through. Placeholder balance, see docs/NOTES.md.
+// is worth ~9.5 coins and ~2.3 P on average, ~65% of spins pay, 3-in-a-row about
+// every 6 spins). Over the five stages: never buying charms clears the run ~13%
+// of the time, buying wisely ~32% — the steep last stages are the difficulty,
+// cheap charms are the way through. Placeholder balance, see docs/NOTES.md.
 export function baseDueForStage(stage: number): number {
   const n = stage - 1
-  return 34 + 16 * n + 7 * n * n
+  return 35 + 16 * n + 8 * n * n
 }
 
 export function basePerfNeededForStage(stage: number): number {
-  return 8 + (stage - 1)
+  return 14 + 2 * (stage - 1)
 }
 
 export function baseSpinCostForStage(stage: number): number {

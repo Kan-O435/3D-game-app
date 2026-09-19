@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { payoutTable } from '../game'
+import { combineFactors, payoutTable, resolveModifiers } from '../game'
 import { useGameStore } from '../store/gameStore'
 import { symbolColor } from '../scene/icons'
 import { iconUrl } from '../scene/artAssets'
@@ -12,7 +12,12 @@ const LENGTHS = [2, 3, 4, 5]
 export function PayoutTable() {
   const isPlaying = useGameStore((s) => s.status === 'playing')
   const valueFactors = useGameStore((s) => s.valueFactors)
-  const rows = useMemo(() => payoutTable(valueFactors), [valueFactors])
+  const charms = useGameStore((s) => s.charms)
+  // drift and charm boosts both change what a symbol pays, so the table shows both
+  const rows = useMemo(
+    () => payoutTable(combineFactors(valueFactors, resolveModifiers(charms).valueBoosts)),
+    [valueFactors, charms],
+  )
 
   if (!isPlaying) return null
 

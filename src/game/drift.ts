@@ -30,3 +30,10 @@ export function rollDrift(
 
   return { factors: { ...current, [symbol.id]: factor }, drift: { symbolId: symbol.id, factor } }
 }
+
+/** Multiply two sets of per-symbol factors (missing = 1): drift on top of charm boosts. */
+export function combineFactors(a: ValueFactors, b: ValueFactors): ValueFactors {
+  const out: Record<number, number> = { ...a }
+  for (const [id, factor] of Object.entries(b)) out[Number(id)] = (out[Number(id)] ?? 1) * factor
+  return out
+}

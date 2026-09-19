@@ -57,10 +57,10 @@ const MIN_MATCH_MID = 3
 // pay (was ~33%), this keeps the average spin worth about the same (~9 coins).
 // Tuned by simulation together with src/game/stage.ts; still not final balance.
 const MATCH_MULTIPLIER: Readonly<Record<number, number>> = {
-  2: 0.7,
-  3: 2.2,
-  4: 7,
-  5: 21,
+  2: 0.36,
+  3: 1.5,
+  4: 5.7,
+  5: 17,
 }
 
 function payoutFor(symbolId: number, matchLength: number, factors: ValueFactors = {}): number {

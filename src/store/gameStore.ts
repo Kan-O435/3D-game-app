@@ -22,6 +22,7 @@ import {
   SHOP_SLOTS,
   REROLL_COST,
   rollDrift,
+  combineFactors,
   type Drift,
   type Grid,
   type LineWin,
@@ -212,7 +213,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const rateLimit = mods.rateLimitImmune ? null : findRateLimit(grid)
     const lastWins = rateLimit
       ? [rateLimit]
-      : findLineWins(grid, [...BASE_PATTERN_IDS, ...mods.extraPatterns], valueFactors)
+      : findLineWins(grid, [...BASE_PATTERN_IDS, ...mods.extraPatterns], combineFactors(valueFactors, mods.valueBoosts))
     // The result is decided now, but stays hidden (see ReelGrid's roll
     // animation) until the reels visually stop and call finishSpin().
     // The turn and the fee are spent up front; the payout is only banked in

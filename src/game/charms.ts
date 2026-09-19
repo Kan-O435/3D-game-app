@@ -17,6 +17,8 @@ export interface Modifiers {
   longMatchMultiplier: number
   // Coins granted right after a stage's debt is paid.
   clearBonus: number
+  // symbolId -> permanent payout factor (stacks with the drifting values).
+  valueBoosts: Record<number, number>
   // Pattern ids (see paylines.ts) unlocked on top of the base rows.
   extraPatterns: string[]
   // Multiplies the performance points a spin earns.
@@ -37,6 +39,10 @@ export interface CharmDef {
 }
 
 const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => from + i)
+
+function boostPay(m: Modifiers, ids: number[], factor: number) {
+  for (const id of ids) m.valueBoosts[id] = (m.valueBoosts[id] ?? 1) * factor
+}
 
 function boost(m: Modifiers, ids: number[], factor: number) {
   for (const id of ids) m.weightBoosts[id] = (m.weightBoosts[id] ?? 1) * factor
@@ -65,36 +71,36 @@ export const CHARMS: readonly CharmDef[] = [
   {
     id: 'rusty-key',
     name: '握手券の束',
-    description: '低位シンボルが出やすくなる',
-    price: 14,
-    apply: (m) => boost(m, range(0, 4), 3),
+    description: 'よく出る5つの図柄の配当が 1.5 倍',
+    price: 42,
+    apply: (m) => boostPay(m, range(0, 4), 1.5),
   },
   {
     id: 'black-cat-eye',
     name: '限定トレカ',
     description: 'レアシンボルが出やすくなる',
-    price: 44,
-    apply: (m) => boost(m, range(10, 11), 6),
+    price: 26,
+    apply: (m) => boost(m, range(10, 11), 8),
   },
   {
     id: 'pity-coin',
     name: 'チェキ券',
     description: '外れたスピンでも +5 コイン',
-    price: 30,
+    price: 21,
     apply: (m) => void (m.consolation += 5),
   },
   {
     id: 'silver-tooth',
     name: 'ファンレター',
     description: '当たりのラインごとに +5 コイン',
-    price: 41,
+    price: 64,
     apply: (m) => void (m.winBonus += 5),
   },
   {
     id: 'skull-ring',
     name: 'ファンサうちわ',
     description: '4個以上揃いの配当が 2.5 倍',
-    price: 15,
+    price: 31,
     apply: (m) => void (m.longMatchMultiplier *= 2.5),
   },
   {
@@ -108,14 +114,14 @@ export const CHARMS: readonly CharmDef[] = [
     id: 'wild-tongue',
     name: '推しTシャツ',
     description: '推し(W)が出やすくなる',
-    price: 25,
+    price: 24,
     apply: (m) => boost(m, [WILD_ID], 2),
   },
   {
     id: 'star-lure',
     name: 'サイリウム',
     description: 'ファンサ(★)が出やすくなる',
-    price: 30,
+    price: 29,
     apply: (m) => boost(m, [SCATTER_ID], 1.4),
   },
   {
@@ -150,14 +156,14 @@ export const CHARMS: readonly CharmDef[] = [
     id: 'v-scar',
     name: 'ヲタ芸 V字',
     description: 'V字・逆V字のラインでも当たる',
-    price: 44,
+    price: 40,
     apply: (m) => void m.extraPatterns.push('v', 'inv-v'),
   },
   {
     id: 'crooked-blade',
     name: 'ヲタ芸 斜め',
     description: '斜めのラインでも当たる',
-    price: 44,
+    price: 40,
     apply: (m) => void m.extraPatterns.push('diag-down', 'diag-up'),
   },
 ]
@@ -175,6 +181,7 @@ export function resolveModifiers(ownedIds: readonly string[]): Modifiers {
     consolation: 0,
     longMatchMultiplier: 1,
     clearBonus: 0,
+    valueBoosts: {},
     extraPatterns: [],
     perfMultiplier: 1,
     spinCostFactor: 1,

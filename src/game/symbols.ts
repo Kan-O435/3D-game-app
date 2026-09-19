@@ -17,33 +17,33 @@ export interface SymbolDef {
 
 // Payout values are 5x the original 2/4/8/20 so the per-spin fee (a few coins)
 // stays small next to a typical win — see docs/NOTES.md.
-// Tiered like a real slot: many common/low-pay symbols, a few rare/high-pay
-// ones. Weights and payouts below are placeholder guesses, not tuned — see
-// docs/NOTES.md ("Turn count / payment curve") for the balance work still to
-// do. CLAUDE.md's tiered example (CloverPit's own payout shape) is the
-// calibration reference for the *shape* of this table, not its values.
+// Tiered like a real slot, and deliberately lopsided: five common symbols fill
+// most of the reels (so 3-in-a-row happens about every 6 spins, not every 13),
+// the uncommon ones and the two rares are occasional. The specials' weights were
+// scaled up with the total so the flame / star / wild turn up as often as
+// before. See docs/NOTES.md for the numbers behind this.
 export const SYMBOLS: readonly SymbolDef[] = [
-  // Common — weight 20
-  { id: 0, kind: 'normal', weight: 20, payout: 10, perf: 2 },
-  { id: 1, kind: 'normal', weight: 20, payout: 10, perf: 2 },
-  { id: 2, kind: 'normal', weight: 20, payout: 10, perf: 2 },
-  { id: 3, kind: 'normal', weight: 20, payout: 10, perf: 2 },
-  { id: 4, kind: 'normal', weight: 20, payout: 10, perf: 2 },
-  // Uncommon — weight 10
-  { id: 5, kind: 'normal', weight: 10, payout: 20, perf: 2 },
-  { id: 6, kind: 'normal', weight: 10, payout: 20, perf: 2 },
-  { id: 7, kind: 'normal', weight: 10, payout: 20, perf: 2 },
-  { id: 8, kind: 'normal', weight: 10, payout: 20, perf: 2 },
-  { id: 9, kind: 'normal', weight: 10, payout: 20, perf: 2 },
-  // Rare — weight 4
-  { id: 10, kind: 'normal', weight: 4, payout: 40, perf: 1 },
-  { id: 11, kind: 'normal', weight: 4, payout: 40, perf: 1 },
+  // Common — weight 50
+  { id: 0, kind: 'normal', weight: 50, payout: 10, perf: 2 },
+  { id: 1, kind: 'normal', weight: 50, payout: 10, perf: 2 },
+  { id: 2, kind: 'normal', weight: 50, payout: 10, perf: 2 },
+  { id: 3, kind: 'normal', weight: 50, payout: 10, perf: 2 },
+  { id: 4, kind: 'normal', weight: 50, payout: 10, perf: 2 },
+  // Uncommon — weight 6
+  { id: 5, kind: 'normal', weight: 6, payout: 100, perf: 2 },
+  { id: 6, kind: 'normal', weight: 6, payout: 100, perf: 2 },
+  { id: 7, kind: 'normal', weight: 6, payout: 100, perf: 2 },
+  { id: 8, kind: 'normal', weight: 6, payout: 100, perf: 2 },
+  { id: 9, kind: 'normal', weight: 6, payout: 100, perf: 2 },
+  // Rare — weight 1
+  { id: 10, kind: 'normal', weight: 1, payout: 500, perf: 1 },
+  { id: 11, kind: 'normal', weight: 1, payout: 500, perf: 1 },
 
   // Specials. The curse has no payout of its own. The wild's payout applies to a run made only of wilds; the
   // scatter's payout is unused (see SCATTER_PAYOUT in paylines.ts).
-  { id: 12, kind: 'curse', weight: 8, payout: 0, perf: 0 },
-  { id: 13, kind: 'scatter', weight: 9, payout: 0, perf: 0 },
-  { id: 14, kind: 'wild', weight: 2, payout: 100, perf: 2 },
+  { id: 12, kind: 'curse', weight: 14, payout: 0, perf: 0 },
+  { id: 13, kind: 'scatter', weight: 16, payout: 0, perf: 0 },
+  { id: 14, kind: 'wild', weight: 4, payout: 100, perf: 2 },
 ]
 
 export const SYMBOL_COUNT = SYMBOLS.length

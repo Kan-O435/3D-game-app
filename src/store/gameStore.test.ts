@@ -47,8 +47,8 @@ describe('screens', () => {
     expect(g()).toMatchObject({
       status: 'title',
       money: STARTING_MONEY,
-      due: 34,
-      perfNeeded: 8,
+      due: 35,
+      perfNeeded: 14,
       spinCost: 2,
       turnsLeft: TURNS_PER_STAGE,
     })
@@ -113,7 +113,7 @@ describe('spinning', () => {
 describe('the deadline', () => {
   it('pays the due, resets performance and opens the shop with the next order', () => {
     atDeadline({ money: 50, perf: 5 })
-    expect(g()).toMatchObject({ status: 'shop', stage: 2, money: 22, perf: 0, lastPaid: 28, due: 57, perfNeeded: 9 })
+    expect(g()).toMatchObject({ status: 'shop', stage: 2, money: 22, perf: 0, lastPaid: 28, due: 59, perfNeeded: 16 })
     expect(g().shopOffer).toHaveLength(SHOP_SLOTS)
   })
 
@@ -256,6 +256,24 @@ describe('rate limit in the store', () => {
     vi.spyOn(Math, 'random').mockImplementation(forceSymbol(CURSE))
     g().spin()
     expect(g().lastWins.every((w) => w.patternId !== 'rate-limit')).toBe(true)
+  })
+})
+
+describe('charm payout boosts in the store', () => {
+  it('rusty-key raises what a common-symbol win actually pays', () => {
+    const allCommon = () => {
+      vi.spyOn(Math, 'random').mockImplementation(forceSymbol(0))
+      g().spin()
+      return g().lastPayout
+    }
+    startPlaying()
+    const plain = allCommon()
+    vi.restoreAllMocks()
+    st.setState({ isSpinning: false, charms: ['rusty-key'], money: 500 })
+    const boosted = allCommon()
+    expect(plain).toBeGreaterThan(0)
+    expect(boosted).toBeGreaterThan(plain)
+    expect(Math.abs(boosted - plain * 1.5)).toBeLessThanOrEqual(2) // rounded per spin
   })
 })
 

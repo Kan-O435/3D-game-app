@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DRIFT_CHANCE, DRIFT_FACTORS, SYMBOLS, rollDrift } from './index'
+import { DRIFT_CHANCE, DRIFT_FACTORS, SYMBOLS, combineFactors, rollDrift } from './index'
 
 /** A `random` that returns the given values in order (then repeats the last). */
 const seq = (...values: number[]) => {
@@ -55,5 +55,20 @@ describe('rollDrift', () => {
     }
     expect(Math.abs(hits / runs - DRIFT_CHANCE)).toBeLessThan(0.015)
     expect([...kinds]).toEqual(['normal'])
+  })
+})
+
+describe('combineFactors', () => {
+  it('multiplies per symbol, treating a missing factor as 1, without mutating its inputs', () => {
+    const drift = { 1: 2, 3: 0.5 }
+    const boosts = { 3: 1.5, 5: 4 }
+    expect(combineFactors(drift, boosts)).toEqual({ 1: 2, 3: 0.75, 5: 4 })
+    expect(drift).toEqual({ 1: 2, 3: 0.5 })
+    expect(boosts).toEqual({ 3: 1.5, 5: 4 })
+  })
+
+  it('is neutral with empty inputs', () => {
+    expect(combineFactors({}, {})).toEqual({})
+    expect(combineFactors({ 2: 1.5 }, {})).toEqual({ 2: 1.5 })
   })
 })

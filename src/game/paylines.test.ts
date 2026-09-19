@@ -156,7 +156,7 @@ describe('wild', () => {
   it('an all-wild run pays as the wild', () => {
     const [win] = rowWins([W, W, W, W, W])
     expect(win).toMatchObject({ symbolId: W, matchLength: 5 })
-    expect(win.payout).toBe(symbolDef(W).payout * 21)
+    expect(win.payout).toBe(symbolDef(W).payout * 17)
   })
 
   it('never bridges a scatter or a curse', () => {
@@ -277,7 +277,7 @@ describe('payout table', () => {
     const table = payoutTable()
     const common = table.find((r) => r.symbolIds.includes(0))!
     expect(common.lengths[0]).toBe(2)
-    expect(common.payouts[0]).toBe(symbolDef(0).payout * 0.7)
+    expect(common.payouts[0]).toBeCloseTo(symbolDef(0).payout * 0.36)
     expect(table.find((r) => r.kind === 'scatter')!.payouts).toEqual([30, 100, 300])
     expect(table.find((r) => r.kind === 'curse')).toMatchObject({ lengths: [RATE_LIMIT_COUNT], payouts: [0] })
   })

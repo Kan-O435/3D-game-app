@@ -49,6 +49,7 @@ describe('charm catalogue', () => {
       consolation: 0,
       longMatchMultiplier: 1,
       clearBonus: 0,
+      valueBoosts: {},
       extraPatterns: [],
       perfMultiplier: 1,
       spinCostFactor: 1,
@@ -121,6 +122,12 @@ describe('charm effects', () => {
     expect(mods('v-scar').extraPatterns).toEqual(['v', 'inv-v'])
     expect(mods('crooked-blade').extraPatterns).toEqual(['diag-down', 'diag-up'])
     expect(mods('v-scar', 'crooked-blade').extraPatterns).toHaveLength(4)
+  })
+
+  it('rusty-key raises the payout of the five common symbols and nothing else', () => {
+    expect(mods('rusty-key').valueBoosts).toEqual({ 0: 1.5, 1: 1.5, 2: 1.5, 3: 1.5, 4: 1.5 })
+    expect(mods('rusty-key').weightBoosts).toEqual({})
+    expect(mods('rusty-key', 'rusty-key').valueBoosts[0]).toBeCloseTo(2.25) // stacks if ever owned twice
   })
 
   it('weight charms boost their own symbols only — never the specials', () => {
