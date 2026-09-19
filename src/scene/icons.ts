@@ -193,7 +193,11 @@ export function createPlaceholderIconTexture(symbolIndex: number): CanvasTexture
         drawTileBase()
         ctx.imageSmoothingEnabled = true
         ctx.imageSmoothingQuality = 'high'
-        drawFitted(ctx, image, { x: IMAGE_MARGIN, y: IMAGE_MARGIN, w: SIZE - IMAGE_MARGIN * 2, h: SIZE - IMAGE_MARGIN * 2 }, 'cover', IMAGE_FOCUS)
+        // photos fill the tile (face-focused crop); the specials are illustrations
+        // with a transparent background, so they're shown whole
+        const box = { x: IMAGE_MARGIN, y: IMAGE_MARGIN, w: SIZE - IMAGE_MARGIN * 2, h: SIZE - IMAGE_MARGIN * 2 }
+        if (kind === 'normal') drawFitted(ctx, image, box, 'cover', IMAGE_FOCUS)
+        else drawFitted(ctx, image, box, 'contain')
         drawBorder()
         texture.needsUpdate = true
       })
