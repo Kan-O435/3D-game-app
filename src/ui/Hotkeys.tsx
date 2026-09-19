@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useGameStore } from '../store/gameStore'
-import { initAudio } from '../audio/audioEngine'
+import { pressPush } from '../store/actions'
 
 // Keyboard: Space/Enter is the "do the obvious thing" key for the current
 // screen (start, accept the order, pull the lever, retry); 1-8 buy in the shop.
@@ -16,14 +16,9 @@ export function Hotkeys() {
         e.preventDefault()
         // A focused button would also "click" on Space release — drop focus.
         if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
-        if (s.status === 'title') {
-          initAudio()
-          s.startRun()
-        } else if (s.status === 'briefing') s.acceptOrder()
-        else if (s.status === 'playing') {
-          initAudio()
-          s.spin()
-        } else if (s.status === 'gameOver') s.restart()
+        if (s.status === 'title' || s.status === 'playing') pressPush()
+        else if (s.status === 'briefing') s.acceptOrder()
+        else if (s.status === 'gameOver') s.restart()
         return
       }
 
