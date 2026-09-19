@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { drawFitted, parseIconId, pickPosterUrl } from './artAssets'
+import { drawFitted, parseIconId, parseSpecialId, pickPosterUrl } from './artAssets'
 
 describe('parseIconId', () => {
   it('reads the trailing number of the file name', () => {
@@ -69,5 +69,19 @@ describe('pickPosterUrl', () => {
     expect(pickPosterUrl(byStage, 'general.png', 2)).toBe('general.png')
     expect(pickPosterUrl(byStage, undefined, 2)).toBeUndefined()
     expect(pickPosterUrl(new Map(), undefined, 1)).toBeUndefined()
+  })
+})
+
+describe('parseSpecialId', () => {
+  it('accepts names or symbol numbers for the three specials', () => {
+    expect(parseSpecialId('../assets/specials/flame.png')).toBe(12)
+    expect(parseSpecialId('../assets/specials/star.webp')).toBe(13)
+    expect(parseSpecialId('../assets/specials/Wild.PNG')).toBe(14)
+    expect(parseSpecialId('../assets/specials/14.png')).toBe(14)
+  })
+
+  it('ignores anything else', () => {
+    expect(parseSpecialId('../assets/specials/03.png')).toBeNull()
+    expect(parseSpecialId('../assets/specials/notes.png')).toBeNull()
   })
 })

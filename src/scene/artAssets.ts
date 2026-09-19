@@ -8,6 +8,12 @@ const iconModules = import.meta.glob('../assets/icons/*.{png,jpg,jpeg,webp,gif,s
   import: 'default',
 }) as Record<string, string>
 
+const specialModules = import.meta.glob('../assets/specials/*.{png,jpg,jpeg,webp,gif,svg}', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+}) as Record<string, string>
+
 const posterModules = import.meta.glob('../assets/poster.{png,jpg,jpeg,webp,gif,svg}', {
   eager: true,
   query: '?url',
@@ -35,7 +41,30 @@ function indexIcons(modules: Record<string, string>): Map<number, string> {
   return byId
 }
 
-const ICON_URLS = indexIcons(iconModules)
+/**
+ * "…/specials/star.png" -> 13. The three specials can be named by what they are
+ * (flame / star / wild) or by symbol number (12 / 13 / 14); null if neither.
+ */
+export function parseSpecialId(path: string): number | null {
+  const name = /([^/\\]+)\.[a-z0-9]+$/i.exec(path)?.[1].toLowerCase() ?? ''
+  if (name.includes('flame') || name.includes('fire')) return 12
+  if (name.includes('star') || name.includes('scatter')) return 13
+  if (name.includes('wild')) return 14
+  const id = parseIconId(path)
+  return id !== null && id >= 12 && id <= 14 ? id : null
+}
+
+function indexSpecials(modules: Record<string, string>): Map<number, string> {
+  const byId = new Map<number, string>()
+  for (const [path, url] of Object.entries(modules)) {
+    const id = parseSpecialId(path)
+    if (id !== null) byId.set(id, url)
+  }
+  return byId
+}
+
+// icons/ wins if the same symbol has an image in both folders
+const ICON_URLS = new Map([...indexSpecials(specialModules), ...indexIcons(iconModules)])
 
 /** URL of the image for a symbol id, if one was supplied. */
 export function iconUrl(symbolId: number): string | undefined {
